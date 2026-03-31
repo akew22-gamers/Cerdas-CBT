@@ -1,7 +1,7 @@
 # DESIGN SYSTEM - Cerdas-CBT
 
 **Framework:** Next.js + Tailwind CSS + Shadcn UI
-**Versi:** 1.0.0
+**Versi:** 1.1.0
 **Tanggal:** 31 Maret 2026
 
 ---
@@ -13,6 +13,7 @@
 - **Styling:** Tailwind CSS
 - **UI Components:** Shadcn UI
 - **Icons:** Lucide React
+- **Math Rendering:** KaTeX (CDN: `https://cdn.jsdelivr.net/npm/katex@0.16.9`)
 - **Theme:** Light mode only
 
 ### 1.2. Typography
@@ -374,6 +375,268 @@ font-family: 'Inter', sans-serif;
 
 ---
 
+### 2.9. Timer Component (Exam Page)
+
+```jsx
+// Timer Normal State
+<div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+  <ClockIcon className="w-4 h-4" />
+  <span className="font-mono">59:30</span>
+</div>
+
+// Timer Warning State (≤10% of duration)
+<div className="flex items-center gap-2 text-sm font-medium text-red-600 animate-pulse">
+  <ClockIcon className="w-4 h-4" />
+  <span className="font-mono font-bold">05:30</span>
+</div>
+```
+
+**Timer Styles:**
+| State | Classes |
+|-------|---------|
+| Normal | `flex items-center gap-2 text-sm font-medium text-gray-900` |
+| Warning | `flex items-center gap-2 text-sm font-medium text-red-600 animate-pulse` |
+| Time Display | `font-mono` (normal) / `font-mono font-bold` (warning) |
+| Icon | `w-4 h-4` |
+| Format | `MM:SS` (e.g., `59:30`, `05:30`) |
+
+---
+
+### 2.10. Warning Popup (Time Warning)
+
+```jsx
+// Time Warning Popup (Modal)
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 mx-4">
+    {/* Header */}
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+        <AlertTriangleIcon className="w-5 h-5 text-red-600" />
+      </div>
+      <h2 className="text-lg font-bold text-gray-900">Peringatan Waktu</h2>
+    </div>
+    
+    {/* Body */}
+    <p className="text-sm text-gray-600 mb-4">
+      Waktu ujian Anda hampir habis! Sisa waktu: <span className="font-mono font-bold text-red-600">05:30</span>
+    </p>
+    
+    {/* Action */}
+    <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
+      Lanjutkan Ujian
+    </button>
+  </div>
+</div>
+```
+
+**Warning Popup Styles:**
+| Element | Classes |
+|---------|---------|
+| Overlay | `fixed inset-0 bg-black/50 flex items-center justify-center z-50` |
+| Modal Container | `bg-white rounded-lg shadow-lg max-w-md w-full p-6 mx-4` |
+| Icon Container | `w-10 h-10 rounded-full bg-red-100 flex items-center justify-center` |
+| Icon | `w-5 h-5 text-red-600` |
+| Title | `text-lg font-bold text-gray-900` |
+| Body Text | `text-sm text-gray-600` |
+| Time Highlight | `font-mono font-bold text-red-600` |
+
+---
+
+### 2.11. Toast/Notification
+
+```jsx
+// Success Toast
+<div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-in">
+  <CheckCircleIcon className="w-5 h-5" />
+  <span className="text-sm font-medium">Data berhasil disimpan</span>
+</div>
+
+// Error Toast
+<div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-in">
+  <XCircleIcon className="w-5 h-5" />
+  <span className="text-sm font-medium">Gagal menyimpan data</span>
+</div>
+
+// Warning Toast
+<div className="fixed bottom-4 right-4 bg-yellow-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-in">
+  <AlertIcon className="w-5 h-5" />
+  <span className="text-sm font-medium">Periksa input Anda</span>
+</div>
+
+// Info Toast
+<div className="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-in">
+  <InfoIcon className="w-5 h-5" />
+  <span className="text-sm font-medium">Auto-save jawaban</span>
+</div>
+```
+
+**Toast Styles:**
+| Type | Background | Icon |
+|------|------------|------|
+| Success | `bg-green-600` | `CheckCircleIcon` |
+| Error | `bg-red-600` | `XCircleIcon` |
+| Warning | `bg-yellow-600` | `AlertIcon` |
+| Info | `bg-blue-600` | `InfoIcon` |
+
+| Element | Classes |
+|---------|---------|
+| Container | `fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50` |
+| Icon | `w-5 h-5` |
+| Text | `text-sm font-medium` |
+
+---
+
+### 2.12. Modal/Dialog (Confirmation)
+
+```jsx
+// Confirmation Modal
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 mx-4">
+    {/* Header */}
+    <h2 className="text-lg font-bold text-gray-900 mb-2">Konfirmasi</h2>
+    <p className="text-sm text-gray-500">Apakah Anda yakin ingin menghapus data ini?</p>
+    
+    {/* Body */}
+    <div className="mt-4 p-3 bg-gray-50 rounded-md">
+      <p className="text-sm text-gray-700">Data yang dihapus tidak dapat dikembalikan.</p>
+    </div>
+    
+    {/* Actions */}
+    <div className="flex gap-3 mt-6">
+      <button className="flex-1 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50">
+        Batal
+      </button>
+      <button className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700">
+        Hapus
+      </button>
+    </div>
+  </div>
+</div>
+```
+
+**Modal Styles:**
+| Element | Classes |
+|---------|---------|
+| Overlay | `fixed inset-0 bg-black/50 flex items-center justify-center z-50` |
+| Container | `bg-white rounded-lg shadow-lg max-w-md w-full p-6 mx-4` |
+| Title | `text-lg font-bold text-gray-900 mb-2` |
+| Description | `text-sm text-gray-500` |
+| Info Box | `mt-4 p-3 bg-gray-50 rounded-md` |
+| Action Buttons Container | `flex gap-3 mt-6` |
+
+---
+
+### 2.13. Exam Navigator (Question Navigator)
+
+```jsx
+// Desktop Navigator (Sidebar)
+<div className="w-48 bg-white border-l border-gray-200 p-4 h-full overflow-y-auto">
+  <p className="text-xs font-semibold text-gray-500 mb-3">Navigator Soal</p>
+  
+  <div className="grid grid-cols-5 gap-2">
+    {/* Unanswered */}
+    <button className="w-8 h-8 rounded-md bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200">
+      1
+    </button>
+    
+    {/* Answered */}
+    <button className="w-8 h-8 rounded-md bg-green-100 text-green-700 text-sm font-medium hover:bg-green-200">
+      2
+    </button>
+    
+    {/* Current */}
+    <button className="w-8 h-8 rounded-md bg-blue-600 text-white text-sm font-medium ring-2 ring-blue-300">
+      3
+    </button>
+  </div>
+  
+  {/* Stats */}
+  <div className="mt-4 pt-4 border-t border-gray-200">
+    <div className="flex justify-between text-xs text-gray-500">
+      <span>Dijawab: 25</span>
+      <span>Total: 50</span>
+    </div>
+  </div>
+</div>
+
+// Mobile Navigator (Bottom Bar)
+<div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-10">
+  <div className="flex justify-between items-center">
+    {/* Prev Button */}
+    <button className="px-3 py-2 bg-gray-100 rounded-md text-sm font-medium text-gray-700 disabled:opacity-50">
+      ← Prev
+    </button>
+    
+    {/* Progress */}
+    <div className="flex items-center gap-2">
+      <span className="text-sm font-medium text-gray-900">3/50</span>
+      <div className="flex gap-1">
+        <span className="w-2 h-2 rounded-full bg-green-500" title="Answered" />
+        <span className="w-2 h-2 rounded-full bg-gray-300" title="Unanswered" />
+      </div>
+    </div>
+    
+    {/* Navigator Toggle */}
+    <button className="px-3 py-2 bg-blue-600 rounded-md text-sm font-medium text-white">
+      Navigator
+    </button>
+    
+    {/* Next Button */}
+    <button className="px-3 py-2 bg-gray-100 rounded-md text-sm font-medium text-gray-700">
+      Next →
+    </button>
+  </div>
+  
+  {/* Expanded Navigator Grid */}
+  <div className="mt-3 grid grid-cols-10 gap-1 max-h-32 overflow-y-auto">
+    {/* Question buttons */}
+  </div>
+</div>
+```
+
+**Navigator Styles:**
+| Element | Classes |
+|---------|---------|
+| Desktop Container | `w-48 bg-white border-l border-gray-200 p-4 h-full overflow-y-auto` |
+| Grid (Desktop) | `grid grid-cols-5 gap-2` |
+| Button Unanswered | `w-8 h-8 rounded-md bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200` |
+| Button Answered | `w-8 h-8 rounded-md bg-green-100 text-green-700 text-sm font-medium hover:bg-green-200` |
+| Button Current | `w-8 h-8 rounded-md bg-blue-600 text-white text-sm font-medium ring-2 ring-blue-300` |
+| Mobile Container | `fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-10` |
+| Mobile Progress | `text-sm font-medium text-gray-900` |
+| Mobile Navigator Grid | `grid grid-cols-10 gap-1 max-h-32 overflow-y-auto` |
+
+---
+
+### 2.14. KaTeX Math Rendering
+
+```jsx
+// KaTeX Component Wrapper
+<div className="katex-container">
+  {/* Inline math: $...$ */}
+  <span className="text-base">Result: $`\sqrt{16} = 4`$</span>
+  
+  {/* Block math: $$...$$ */}
+  <div className="my-4 text-center">
+    $$`\frac{a}{b} + \frac{c}{d} = \frac{ad + bc}{bd}`$$
+  </div>
+</div>
+```
+
+**KaTeX Styling:**
+| Element | Classes |
+|---------|---------|
+| Inline Math | `text-base` (inherits parent font size) |
+| Block Math Container | `my-4 text-center` |
+| Math Text Color | Inherits `text-gray-900` from parent |
+
+**CDN Setup (in layout.tsx):**
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+```
+
+---
+
 ## 3. Page Layouts
 
 ### 3.1. Dashboard Layout
@@ -520,4 +783,4 @@ focus:border-transparent
 
 ---
 
-**Document Status:** ✅ Complete - Ready for UI implementation.
+**Document Status:** ✅ Complete v1.1 - Clarified with Timer, Warning, Toast, Modal, Navigator styling.
