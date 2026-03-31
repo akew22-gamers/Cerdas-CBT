@@ -1,7 +1,7 @@
 # DESIGN SYSTEM - Cerdas-CBT
 
 **Framework:** Next.js + Tailwind CSS + Shadcn UI
-**Versi:** 1.1.0
+**Versi:** 1.2.0
 **Tanggal:** 31 Maret 2026
 
 ---
@@ -13,10 +13,24 @@
 - **Styling:** Tailwind CSS
 - **UI Components:** Shadcn UI
 - **Icons:** Lucide React
-- **Math Rendering:** KaTeX (CDN: `https://cdn.jsdelivr.net/npm/katex@0.16.9`)
+- **Math Rendering:** KaTeX (react-katex package)
+- **Notifications:** Sonner (Shadcn UI)
 - **Theme:** Light mode only
 
-### 1.2. Typography
+### 1.2. Shadcn UI Components Used
+
+| Component | Install Command | Usage |
+|-----------|-----------------|-------|
+| **Sonner** | `npx shadcn@latest add sonner` | Toast notifications |
+| **Alert** | `npx shadcn@latest add alert` | Inline alerts/warnings |
+| **Alert Dialog** | `npx shadcn@latest add alert-dialog` | Confirmation dialogs |
+| **Button** | `npx shadcn@latest add button` | Buttons |
+| **Input** | `npx shadcn@latest add input` | Form inputs |
+| **Select** | `npx shadcn@latest add select` | Dropdown selects |
+| **Table** | `npx shadcn@latest add table` | Data tables |
+| **Badge** | `npx shadcn@latest add badge` | Status badges |
+
+### 1.3. Typography
 
 ```css
 /* Font Family */
@@ -28,7 +42,7 @@ font-family: 'Inter', sans-serif;
 --text-brand: text-blue-600      /* Links, brand elements */
 ```
 
-### 1.3. Color Palette
+### 1.4. Color Palette
 
 | Category | Tailwind Class | Hex | Usage |
 |----------|----------------|-----|-------|
@@ -41,7 +55,7 @@ font-family: 'Inter', sans-serif;
 | **Text Secondary** | `text-gray-500` | #6B7280 | Descriptions |
 | **Text Brand** | `text-blue-600` | #2563EB | Links, brand |
 
-### 1.4. Layout Structure
+### 1.5. Layout Structure
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -442,91 +456,314 @@ font-family: 'Inter', sans-serif;
 
 ---
 
-### 2.11. Toast/Notification
+### 2.11. Toast/Notification (Sonner)
 
-```jsx
-// Success Toast
-<div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-in">
-  <CheckCircleIcon className="w-5 h-5" />
-  <span className="text-sm font-medium">Data berhasil disimpan</span>
-</div>
+**Menggunakan Shadcn UI Sonner component (package: `sonner`).**
 
-// Error Toast
-<div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-in">
-  <XCircleIcon className="w-5 h-5" />
-  <span className="text-sm font-medium">Gagal menyimpan data</span>
-</div>
+#### Setup di Root Layout
 
-// Warning Toast
-<div className="fixed bottom-4 right-4 bg-yellow-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-in">
-  <AlertIcon className="w-5 h-5" />
-  <span className="text-sm font-medium">Periksa input Anda</span>
-</div>
+```tsx
+// app/layout.tsx
+import { Toaster } from "@/components/ui/sonner"
 
-// Info Toast
-<div className="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-in">
-  <InfoIcon className="w-5 h-5" />
-  <span className="text-sm font-medium">Auto-save jawaban</span>
-</div>
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Toaster richColors position="top-right" />
+      </body>
+    </html>
+  )
+}
 ```
 
-**Toast Styles:**
-| Type | Background | Icon |
-|------|------------|------|
-| Success | `bg-green-600` | `CheckCircleIcon` |
-| Error | `bg-red-600` | `XCircleIcon` |
-| Warning | `bg-yellow-600` | `AlertIcon` |
-| Info | `bg-blue-600` | `InfoIcon` |
+#### Import dan Penggunaan
 
-| Element | Classes |
-|---------|---------|
-| Container | `fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50` |
-| Icon | `w-5 h-5` |
-| Text | `text-sm font-medium` |
+```tsx
+"use client"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+
+export function ToastDemo() {
+  return (
+    <>
+      {/* Success Toast */}
+      <Button onClick={() => toast.success("Data berhasil disimpan")}>
+        Success
+      </Button>
+      
+      {/* Error Toast */}
+      <Button onClick={() => toast.error("Gagal menyimpan data")}>
+        Error
+      </Button>
+      
+      {/* Warning Toast */}
+      <Button onClick={() => toast.warning("Periksa input Anda")}>
+        Warning
+      </Button>
+      
+      {/* Info Toast */}
+      <Button onClick={() => toast.info("Auto-save jawaban")}>
+        Info
+      </Button>
+      
+      {/* Toast with Description */}
+      <Button onClick={() => 
+        toast("Event has been created", {
+          description: "Sunday, December 03, 2023 at 9:00 AM"
+        })
+      }>
+        With Description
+      </Button>
+      
+      {/* Toast with Action */}
+      <Button onClick={() => 
+        toast("File deleted", {
+          action: {
+            label: "Undo",
+            onClick: () => console.log("Undo")
+          }
+        })
+      }>
+        With Action
+      </Button>
+      
+      {/* Promise Toast */}
+      <Button onClick={() => 
+        toast.promise(
+          fetch('/api/data'),
+          {
+            loading: 'Memproses...',
+            success: 'Berhasil!',
+            error: 'Gagal!'
+          }
+        )
+      }>
+        Promise
+      </Button>
+    </>
+  )
+}
+```
+
+#### Sonner API Reference
+
+| Method | Kegunaan |
+|--------|----------|
+| `toast(message)` | Basic toast |
+| `toast.success(message)` | Success toast (hijau) |
+| `toast.error(message)` | Error toast (merah) |
+| `toast.warning(message)` | Warning toast (kuning) |
+| `toast.info(message)` | Info toast (biru) |
+| `toast.promise(promise, options)` | Promise-based toast |
+| `toast.dismiss(id?)` | Dismiss toast |
+
+#### Toaster Props
+
+| Prop | Type | Default | Kegunaan |
+|------|------|---------|----------|
+| `position` | string | `"bottom-right"` | Posisi toast |
+| `richColors` | boolean | `false` | Warna berbeda per type |
+| `closeButton` | boolean | `false` | Tampilkan tombol close |
+| `duration` | number | `4000` | Durasi dalam ms |
 
 ---
 
-### 2.12. Modal/Dialog (Confirmation)
+### 2.12. Alert (Inline Notification)
 
-```jsx
-// Confirmation Modal
-<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-  <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 mx-4">
-    {/* Header */}
-    <h2 className="text-lg font-bold text-gray-900 mb-2">Konfirmasi</h2>
-    <p className="text-sm text-gray-500">Apakah Anda yakin ingin menghapus data ini?</p>
-    
-    {/* Body */}
-    <div className="mt-4 p-3 bg-gray-50 rounded-md">
-      <p className="text-sm text-gray-700">Data yang dihapus tidak dapat dikembalikan.</p>
-    </div>
-    
-    {/* Actions */}
-    <div className="flex gap-3 mt-6">
-      <button className="flex-1 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50">
-        Batal
-      </button>
-      <button className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700">
+**Menggunakan Shadcn UI Alert component untuk notifikasi inline.**
+
+#### Import
+
+```tsx
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert"
+import { AlertCircleIcon, CheckCircle2Icon, InfoIcon } from "lucide-react"
+```
+
+#### Alert Variants
+
+```tsx
+// Default Alert
+<Alert>
+  <InfoIcon className="h-4 w-4" />
+  <AlertTitle>Informasi</AlertTitle>
+  <AlertDescription>
+    Ini adalah pesan informasi untuk pengguna.
+  </AlertDescription>
+</Alert>
+
+// Success Alert
+<Alert className="border-green-200 bg-green-50 text-green-800">
+  <CheckCircle2Icon className="h-4 w-4 text-green-600" />
+  <AlertTitle>Berhasil!</AlertTitle>
+  <AlertDescription>
+    Perubahan Anda telah disimpan.
+  </AlertDescription>
+</Alert>
+
+// Destructive/Error Alert
+<Alert variant="destructive">
+  <AlertCircleIcon className="h-4 w-4" />
+  <AlertTitle>Error</AlertTitle>
+  <AlertDescription>
+    Gagal memproses permintaan Anda. Silakan coba lagi.
+  </AlertDescription>
+</Alert>
+
+// Warning Alert
+<Alert className="border-yellow-200 bg-yellow-50 text-yellow-800">
+  <AlertTriangleIcon className="h-4 w-4 text-yellow-600" />
+  <AlertTitle>Peringatan</AlertTitle>
+  <AlertDescription>
+    Waktu ujian hampir habis!
+  </AlertDescription>
+</Alert>
+```
+
+#### Alert Props
+
+| Component | Prop | Type | Kegunaan |
+|-----------|------|------|----------|
+| Alert | `variant` | `"default" \| "destructive"` | Style variant |
+| AlertTitle | `className` | string | Custom styling |
+| AlertDescription | `className` | string | Custom styling |
+
+---
+
+### 2.13. Alert Dialog (Confirmation Dialog)
+
+**Menggunakan Shadcn UI AlertDialog untuk konfirmasi aksi.**
+
+#### Import
+
+```tsx
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+```
+
+#### Basic Alert Dialog
+
+```tsx
+<AlertDialog>
+  <AlertDialogTrigger asChild>
+    <Button variant="destructive">Hapus Data</Button>
+  </AlertDialogTrigger>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+      <AlertDialogDescription>
+        Tindakan ini tidak dapat dibatalkan. Data akan dihapus secara permanen
+        dari server kami.
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Batal</AlertDialogCancel>
+      <AlertDialogAction className="bg-red-600 hover:bg-red-700">
         Hapus
-      </button>
-    </div>
-  </div>
-</div>
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
 ```
 
-**Modal Styles:**
-| Element | Classes |
-|---------|---------|
-| Overlay | `fixed inset-0 bg-black/50 flex items-center justify-center z-50` |
-| Container | `bg-white rounded-lg shadow-lg max-w-md w-full p-6 mx-4` |
-| Title | `text-lg font-bold text-gray-900 mb-2` |
-| Description | `text-sm text-gray-500` |
-| Info Box | `mt-4 p-3 bg-gray-50 rounded-md` |
-| Action Buttons Container | `flex gap-3 mt-6` |
+#### Reusable Confirm Dialog Component
+
+```tsx
+// components/confirm-dialog.tsx
+"use client"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
+interface ConfirmDialogProps {
+  trigger: React.ReactNode
+  title: string
+  description: string
+  confirmText?: string
+  cancelText?: string
+  onConfirm: () => void
+  variant?: "default" | "destructive"
+}
+
+export function ConfirmDialog({
+  trigger,
+  title,
+  description,
+  confirmText = "Lanjutkan",
+  cancelText = "Batal",
+  onConfirm,
+  variant = "default",
+}: ConfirmDialogProps) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        {trigger}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{cancelText}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            className={variant === "destructive" ? "bg-red-600 hover:bg-red-700" : ""}
+          >
+            {confirmText}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
+// Usage
+<ConfirmDialog
+  trigger={<Button variant="destructive">Hapus</Button>}
+  title="Hapus ujian?"
+  description="Ujian dan semua soal akan dihapus permanen."
+  confirmText="Hapus"
+  onConfirm={() => deleteUjian()}
+  variant="destructive"
+/>
+```
+
+#### Alert Dialog Props
+
+| Component | Prop | Type | Kegunaan |
+|-----------|------|------|----------|
+| AlertDialogContent | `size` | `"default" \| "sm"` | Ukuran dialog |
+| AlertDialogTrigger | `asChild` | boolean | Render as child element |
+| AlertDialogAction | `className` | string | Custom styling untuk tombol konfirmasi |
+| AlertDialogCancel | `className` | string | Custom styling untuk tombol batal |
 
 ---
 
-### 2.13. Exam Navigator (Question Navigator)
+### 2.14. Exam Navigator (Question Navigator)
 
 ```jsx
 // Desktop Navigator (Sidebar)
@@ -608,32 +845,106 @@ font-family: 'Inter', sans-serif;
 
 ---
 
-### 2.14. KaTeX Math Rendering
+### 2.15. KaTeX Math Rendering
 
-```jsx
-// KaTeX Component Wrapper
-<div className="katex-container">
-  {/* Inline math: $...$ */}
-  <span className="text-base">Result: $`\sqrt{16} = 4`$</span>
-  
-  {/* Block math: $$...$$ */}
-  <div className="my-4 text-center">
-    $$`\frac{a}{b} + \frac{c}{d} = \frac{ad + bc}{bd}`$$
-  </div>
-</div>
+**Menggunakan package `react-katex` untuk rendering rumus matematika.**
+
+#### Installation
+
+```bash
+npm install katex react-katex
 ```
 
-**KaTeX Styling:**
+#### Setup di Root Layout
+
+```tsx
+// app/layout.tsx
+import 'katex/dist/katex.min.css'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+#### Import dan Penggunaan
+
+```tsx
+"use client"
+import { InlineMath, BlockMath } from 'react-katex'
+
+export function MathExample() {
+  return (
+    <div>
+      {/* Inline Math */}
+      <p>
+        Hasil dari <InlineMath math="\sqrt{16}" /> adalah 4.
+      </p>
+      
+      {/* Block Math */}
+      <BlockMath math="\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}" />
+      
+      {/* Complex Formula */}
+      <BlockMath math="\frac{a}{b} + \frac{c}{d} = \frac{ad + bc}{bd}" />
+    </div>
+  )
+}
+```
+
+#### Alternative: Direct katex.renderToString
+
+```tsx
+"use client"
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
+
+export function MathRenderer({ formula, displayMode = false }: { 
+  formula: string
+  displayMode?: boolean 
+}) {
+  const html = katex.renderToString(formula, {
+    displayMode,
+    throwOnError: false
+  })
+  
+  return <span dangerouslySetInnerHTML={{ __html: html }} />
+}
+
+// Usage
+<MathRenderer formula="\sqrt{16} = 4" />
+<MathRenderer formula="\sum_{i=1}^n i = \frac{n(n+1)}{2}" displayMode />
+```
+
+#### KaTeX Props
+
+| Prop | Type | Default | Kegunaan |
+|------|------|---------|----------|
+| `math` | string | required | LaTeX formula |
+| `displayMode` | boolean | `false` | Block vs inline |
+| `throwOnError` | boolean | `true` | Throw on parse error |
+| `errorColor` | string | `"#cc0000"` | Error text color |
+
+#### KaTeX Styling
+
 | Element | Classes |
 |---------|---------|
 | Inline Math | `text-base` (inherits parent font size) |
 | Block Math Container | `my-4 text-center` |
 | Math Text Color | Inherits `text-gray-900` from parent |
 
-**CDN Setup (in layout.tsx):**
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-```
+#### Supported LaTeX Syntax
+
+| Syntax | Example | Result |
+|--------|---------|--------|
+| Fractions | `\frac{a}{b}` | a/b |
+| Square root | `\sqrt{x}` | √x |
+| Power | `x^2` | x² |
+| Sum | `\sum_{i=1}^n` | Σ |
+| Integral | `\int_a^b` | ∫ |
+| Greek letters | `\alpha, \beta, \gamma` | α, β, γ |
 
 ---
 
@@ -783,4 +1094,4 @@ focus:border-transparent
 
 ---
 
-**Document Status:** ✅ Complete v1.1 - Clarified with Timer, Warning, Toast, Modal, Navigator styling.
+**Document Status:** ✅ Complete v1.2 - Updated with Shadcn UI Sonner, Alert, AlertDialog components and react-katex.
