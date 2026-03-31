@@ -1,6 +1,6 @@
 # DEPLOYMENT CONFIGURATION - Cerdas-CBT
 
-**Versi:** 2.1.0
+**Versi:** 2.2.0
 **Tanggal:** 31 Maret 2026
 **Fase:** 1 - Online Mode (Vercel + Supabase)
 
@@ -19,7 +19,7 @@
 │  │ cerdas-cbt/     │ ──────► Vercel Auto-deploy             │
 │  │ ├── src/        │         ┌─────────────────┐            │
 │  │ ├── app/        │         │ Vercel Server   │            │
-│  │ ├── prisma/     │         │ (Edge/Serverless│            │
+│  │ ├── lib/        │         │ (Edge/Serverless│            │
 │  │ └── ...         │         │ + Supabase)     │            │
 │  └─────────────────┘         │ https://cbt...  │            │
 │         │                    └────────┬────────┘            │
@@ -39,18 +39,51 @@ Access: https://cbt-xxx.vercel.app
 
 ### 1.2. Tech Stack
 
-| Component | Service | Free Tier |
-|-----------|---------|-----------|
-| **Frontend** | Next.js 14+ (Vercel) | Free (Hobby) |
-| **Styling** | Tailwind CSS + Shadcn UI | Free |
-| **Math Rendering** | KaTeX (CDN) | Free |
-| **Database** | Supabase PostgreSQL | 512MB |
-| **Storage** | Supabase Storage | 1GB |
-| **Auth** | Supabase Auth | 50K users/month |
-| **Realtime** | Supabase Realtime | 200 concurrent |
-| **CDN** | Vercel Edge Network | 100GB bandwidth |
+| Component | Service/Package | Version | Free Tier |
+|-----------|-----------------|---------|-----------|
+| **Framework** | Next.js | ^14.2.32 | Free (Hobby) |
+| **React** | React | ^18.2.0 | - |
+| **Styling** | Tailwind CSS | ^3.4.0 | Free |
+| **UI Components** | Shadcn UI | Latest | Free |
+| **Notifications** | Sonner | ^1.5.0 | Free |
+| **Math Rendering** | react-katex | ^3.1.0 | Free |
+| **Database** | Supabase PostgreSQL | Managed | 512MB |
+| **Supabase Client** | @supabase/supabase-js | ^2.100.1 | - |
+| **SSR Auth** | @supabase/ssr | ^0.6.0 | - |
+| **Storage** | Supabase Storage | Managed | 1GB |
+| **Auth** | Supabase Auth | Managed | 50K users/month |
+| **Realtime** | Supabase Realtime | Managed | 200 concurrent |
+| **CDN** | Vercel Edge Network | - | 100GB bandwidth |
 
-### 1.3. Timeline
+### 1.3. Required NPM Packages
+
+```json
+{
+  "dependencies": {
+    "next": "^14.2.32",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@supabase/supabase-js": "^2.100.1",
+    "@supabase/ssr": "^0.6.0",
+    "katex": "^0.16.44",
+    "react-katex": "^3.1.0",
+    "sonner": "^1.5.0",
+    "lucide-react": "^0.400.0",
+    "tailwindcss": "^3.4.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.2.32"
+  }
+}
+```
 
 | Phase | Description | Timeline |
 |-------|-------------|----------|
@@ -136,6 +169,154 @@ Go to Supabase Dashboard → Authentication → Providers
   - Authentication → Settings →Disable email confirmations
 - Rate limiting: 30 requests per hour per IP
 
+### 2.5. Supabase SSR Client Setup (CRITICAL for Next.js App Router)
+
+**IMPORTANT:** Next.js App Router requires `@supabase/ssr` package for proper authentication with cookies.
+
+#### Create Supabase Client Files
+
+**File: `lib/supabase/client.ts` (Client Components)**
+```typescript
+import { createBrowserClient } from '@supabase/ssr'
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+  )
+}
+```
+
+**File: `lib/supabase/server.ts` (Server Components)**
+```typescript
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export async function createClient() {
+  const cookieStore = await cookies()
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
+  )
+}
+```
+
+**File: `middleware.ts` (Session Refresh)**
+```typescript
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // IMPORTANT: Protect exam routes - auto-refresh session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // Auto-refresh token during exam (prevents session timeout)
+  if (session) {
+    await supabase.auth.refreshSession()
+  }
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}
+```
+
+#### Usage in Components
+
+**Server Component Example:**
+```typescript
+// app/dashboard/page.tsx
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+
+export default async function DashboardPage() {
+  const supabase = await createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    redirect('/login')
+  }
+  
+  const { data: ujian } = await supabase
+    .from('ujian')
+    .select('*')
+  
+  return <div>{/* render ujian */}</div>
+}
+```
+
+**Client Component Example:**
+```typescript
+// components/ujian-list.tsx
+'use client'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
+
+export function UjianList() {
+  const [ujian, setUjian] = useState([])
+  const supabase = createClient()
+  
+  useEffect(() => {
+    supabase.from('ujian').select('*').then(({ data }) => {
+      setUjian(data || [])
+    })
+  }, [])
+  
+  return <div>{/* render */}</div>
+}
+```
+
 ---
 
 ## 3. Vercel Setup
@@ -156,21 +337,31 @@ Add these in Vercel Dashboard → Project Settings → Environment Variables:
 ```env
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL="https://xyz.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
 SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 
 # App Configuration
 NEXT_PUBLIC_APP_URL="https://cbt-xxx.vercel.app"
 
-# KaTeX CDN (optional, defaults to jsdelivr)
-NEXT_PUBLIC_KATEX_CDN="https://cdn.jsdelivr.net/npm/katex@0.16.9"
+# Setup Wizard Security Token (CRITICAL - generate a secure random string)
+# This token is required to complete the initial setup wizard
+# Generate with: openssl rand -hex 32
+SETUP_TOKEN="your-secure-random-token-here"
 
-# Optional: For NextAuth (if not using Supabase Auth)
-NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
-NEXTAUTH_URL="https://cbt-xxx.vercel.app"
+# Session Configuration
+# JWT expiry time in seconds (default: 7 days)
+SESSION_EXPIRY_SECONDS=604800
+
+# Auto-refresh token before expiry (in seconds before expiry)
+# Set to 1 hour before expiry to prevent session timeout during exam
+TOKEN_REFRESH_THRESHOLD=3600
 ```
 
-**Note:** Super-admin credentials are created via Setup Wizard on first deployment, not via environment variables.
+**Important Notes:**
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the new naming convention (previously `ANON_KEY`)
+- `SETUP_TOKEN` must be generated before first deployment
+- Super-admin credentials are created via Setup Wizard using this token
+- Session auto-refresh prevents timeout during active exams
 
 ### 3.3. Build Settings
 
@@ -442,13 +633,16 @@ export function ImageUpload({ onChange }: { onChange: (url: string) => void }) {
 |-------|----------|
 | Build fails on Vercel | Check `npx prisma generate` in build command |
 | Image upload fails | Check Storage bucket permissions |
-| Auth not working | Verify SUPABASE_ANON_KEY |
+| Auth not working | Verify `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `@supabase/ssr` setup |
+| Session expires during exam | Check middleware auto-refresh, increase `SESSION_EXPIRY_SECONDS` |
 | Slow image load | Enable CDN caching in Supabase Storage |
 | Database connection error | Check DATABASE_URL format |
+| Setup wizard keeps appearing | Verify `SETUP_TOKEN` matches in request |
 
 ### 7.2. Support Resources
 
 - Supabase Docs: https://supabase.com/docs
+- Supabase SSR Guide: https://supabase.com/docs/guides/auth/server-side/creating-a-client
 - Vercel Docs: https://vercel.com/docs
 - Supabase Discord: https://discord.supabase.com
 - Vercel Community: https://github.com/vercel/next.js/discussions
@@ -469,4 +663,4 @@ Setelah Fase 1 stabil (3-6 bulan):
 
 ---
 
-**Document Status:** ✅ Final v2.1 - Updated with KaTeX CDN, Setup Wizard flow.
+**Document Status:** ✅ Final v2.2 - Added @supabase/ssr, setup token security, session auto-refresh.
