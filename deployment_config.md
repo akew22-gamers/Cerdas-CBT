@@ -1,6 +1,6 @@
 # DEPLOYMENT CONFIGURATION - Cerdas-CBT
 
-**Versi:** 2.0.0
+**Versi:** 2.1.0
 **Tanggal:** 31 Maret 2026
 **Fase:** 1 - Online Mode (Vercel + Supabase)
 
@@ -42,6 +42,8 @@ Access: https://cbt-xxx.vercel.app
 | Component | Service | Free Tier |
 |-----------|---------|-----------|
 | **Frontend** | Next.js 14+ (Vercel) | Free (Hobby) |
+| **Styling** | Tailwind CSS + Shadcn UI | Free |
+| **Math Rendering** | KaTeX (CDN) | Free |
 | **Database** | Supabase PostgreSQL | 512MB |
 | **Storage** | Supabase Storage | 1GB |
 | **Auth** | Supabase Auth | 50K users/month |
@@ -159,13 +161,16 @@ SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 
 # App Configuration
 NEXT_PUBLIC_APP_URL="https://cbt-xxx.vercel.app"
-SUPER_ADMIN_USERNAME="admin"
-SUPER_ADMIN_PASSWORD="secure-password-change-this"
+
+# KaTeX CDN (optional, defaults to jsdelivr)
+NEXT_PUBLIC_KATEX_CDN="https://cdn.jsdelivr.net/npm/katex@0.16.9"
 
 # Optional: For NextAuth (if not using Supabase Auth)
 NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
 NEXTAUTH_URL="https://cbt-xxx.vercel.app"
 ```
+
+**Note:** Super-admin credentials are created via Setup Wizard on first deployment, not via environment variables.
 
 ### 3.3. Build Settings
 
@@ -464,4 +469,4 @@ Setelah Fase 1 stabil (3-6 bulan):
 
 ---
 
-**Document Status:** ✅ Final v2.0 - Fase 1 Ready for Deployment.
+**Document Status:** ✅ Final v2.1 - Updated with KaTeX CDN, Setup Wizard flow.

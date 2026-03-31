@@ -2,7 +2,7 @@
 
 **Framework:** Next.js 14+ (App Router)
 **API Style:** REST + WebSocket for real-time
-**Versi:** 1.1.0
+**Versi:** 1.2.0
 **Tanggal:** 31 Maret 2026
 
 ---
@@ -11,6 +11,10 @@
 
 ```
 /api
+├── /setup
+│   ├── /status               GET     - Check setup wizard status
+│   └── /complete             POST    - Complete setup wizard (first-run only)
+│
 ├── /auth
 │   ├── /login              POST    - Login (super_admin, guru, siswa)
 │   ├── /logout             POST    - Logout
@@ -99,9 +103,96 @@
 
 ---
 
-## 2. Authentication Endpoints
+## 2. Setup Wizard Endpoints (First-Run Only)
 
-### 2.1. POST `/api/auth/login`
+### 2.1. GET `/api/setup/status`
+
+**Purpose:** Check if setup wizard has been completed
+
+**Response (Setup Not Completed):**
+```json
+{
+  "success": true,
+  "data": {
+    "setup_completed": false,
+    "message": "Setup wizard required"
+  }
+}
+```
+
+**Response (Setup Already Completed):**
+```json
+{
+  "success": true,
+  "data": {
+    "setup_completed": true,
+    "message": "Setup already completed"
+  }
+}
+```
+
+---
+
+### 2.2. POST `/api/setup/complete`
+
+**Purpose:** Complete setup wizard (create super-admin + school identity)
+
+**Request:**
+```json
+{
+  "super_admin": {
+    "username": "admin",
+    "password": "secure_password_123",
+    "nama": "Administrator"
+  },
+  "sekolah": {
+    "nama_sekolah": "SMA Negeri 1 Jakarta",
+    "npsn": "12345678",
+    "alamat": "Jl. Pendidikan No. 1, Jakarta",
+    "telepon": "021-1234567",
+    "email": "sekolah@example.com",
+    "website": "https://sekolah.sch.id",
+    "kepala_sekolah": "Dr. Nama Kepala Sekolah",
+    "tahun_ajaran": "2025/2026"
+  }
+}
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Setup completed successfully",
+    "super_admin": {
+      "id": "uuid",
+      "username": "admin",
+      "nama": "Administrator"
+    },
+    "sekolah": {
+      "id": "uuid",
+      "nama_sekolah": "SMA Negeri 1 Jakarta"
+    }
+  }
+}
+```
+
+**Error (Setup Already Completed):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "SETUP_ALREADY_COMPLETED",
+    "message": "Setup wizard sudah pernah dijalankan"
+  }
+}
+```
+
+---
+
+## 3. Authentication Endpoints
+
+### 3.1. POST `/api/auth/login`
 
 **Purpose:** Login untuk super_admin, guru, dan siswa
 
@@ -514,12 +605,16 @@
 **Request:** (multipart/form-data)
 - `file`: Excel file (.xlsx)
 - `mode`: "update_existing" atau "skip_existing"
-- `kelas_id`: UUID kelas default untuk siswa baru
 
 **Excel Format:**
 | NISN | Nama | Password | Kelas |
 |------|------|----------|-------|
 | 1234567890 | Siswa 1 | pass123 | X IPA 1 |
+
+**Important Notes:**
+- Kolom **Kelas** diisi dengan **Nama Kelas** (contoh: "X IPA 1"), **BUKAN** UUID.
+- Sistem akan mencocokkan `nama_kelas` dengan data kelas yang sudah ada di database.
+- Jika `nama_kelas` tidak ditemukan → row tersebut di-skip dan ditambahkan ke errors.
 
 **Response:**
 ```json
@@ -533,6 +628,10 @@
       {
         "row": 10,
         "message": "NISN format invalid"
+      },
+      {
+        "row": 15,
+        "message": "Kelas 'X IPA 99' tidak ditemukan"
       }
     ]
   }
@@ -1339,6 +1438,8 @@
 | `RESULT_HIDDEN` | Hasil ujian tidak ditampilkan |
 | `FILE_INVALID` | File format tidak valid |
 | `IMPORT_ERROR` | Error saat import data |
+| `KELAS_NOT_FOUND` | Nama kelas tidak ditemukan saat import |
+| `SETUP_ALREADY_COMPLETED` | Setup wizard sudah pernah dijalankan |
 | `UNAUTHORIZED` | Tidak memiliki akses |
 | `VALIDATION_ERROR` | Data tidak valid |
 
@@ -1353,7 +1454,7 @@
 | `siswa_join` | Siswa mulai ujian |
 | `siswa_submit` | Siswa submit ujian |
 | `siswa_answer` | Siswa menyimpan jawaban (optional) |
-| `timer_warning` | Peringatan waktu (5 min left) |
+| `timer_warning` | Peringatan waktu (trigger saat sisa waktu ≤ 10% durasi) |
 | `cheating_alert` | Siswa melakukan cheating event |
 
 ---
@@ -1369,4 +1470,4 @@
 
 ---
 
-**Document Status:** ✅ Complete v1.1 - Ready for implementation planning.
+**Document Status:** ✅ Complete v1.2 - Added setup wizard, clarified import kelas matching.

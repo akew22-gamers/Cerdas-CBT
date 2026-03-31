@@ -2,7 +2,7 @@
 
 **Database:** Supabase PostgreSQL (Managed)
 **Storage:** Supabase Storage (1GB free tier)
-**Versi:** 2.0.0
+**Versi:** 2.1.0
 **Tanggal:** 31 Maret 2026
 **Fase:** 1 - Online Mode (Vercel + Supabase)
 
@@ -231,6 +231,11 @@ CREATE INDEX idx_soal_ujian ON soal(ujian_id);
 -- ============================================
 -- TABLE: hasil_ujian
 -- ============================================
+-- IMPORTANT: seed_soal dan seed_opsi digunakan untuk randomization yang konsisten
+-- - seed_soal: Random seed untuk urutan soal per siswa
+-- - seed_opsi: Random seed untuk urutan opsi jawaban per siswa
+-- - Seed di-generate saat siswa klik "Mulai Ujian" dan disimpan di DB
+-- - Jika siswa refresh halaman, seed diambil dari DB untuk urutan yang konsisten
 CREATE TABLE hasil_ujian (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     siswa_id UUID REFERENCES siswa(id) ON DELETE CASCADE,
@@ -240,8 +245,8 @@ CREATE TABLE hasil_ujian (
     jumlah_salah INTEGER NOT NULL DEFAULT 0,
     waktu_mulai TIMESTAMP WITH TIME ZONE NOT NULL,
     waktu_selesai TIMESTAMP WITH TIME ZONE,
-    seed_soal INTEGER NOT NULL,  -- seed untuk random urutan soal
-    seed_opsi INTEGER NOT NULL,  -- seed untuk random urutan opsi
+    seed_soal INTEGER NOT NULL,  -- seed untuk random urutan soal (disimpan untuk recovery)
+    seed_opsi INTEGER NOT NULL,  -- seed untuk random urutan opsi (disimpan untuk recovery)
     is_submitted BOOLEAN NOT NULL DEFAULT FALSE,
     tab_switch_count INTEGER NOT NULL DEFAULT 0,  -- anti-cheating counter
     fullscreen_exit_count INTEGER NOT NULL DEFAULT 0,  -- anti-cheating counter
@@ -311,7 +316,7 @@ CREATE INDEX idx_cheating_hasil ON anti_cheating_log(hasil_ujian_id);
 -- ============================================
 CREATE TABLE identitas_sekolah (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    nama_sekolah VARCHAR(200) NOT NULL,
+    nama_sekolah VARCHAR(200) NOT NULL DEFAULT 'Nama Sekolah',
     npsn VARCHAR(10),  -- Nomor Pokok Sekolah Nasional
     alamat TEXT,
     logo_url TEXT,  -- URL logo sekolah (opsional)
@@ -320,14 +325,14 @@ CREATE TABLE identitas_sekolah (
     website VARCHAR(200),
     kepala_sekolah VARCHAR(100),
     tahun_ajaran VARCHAR(20) NOT NULL DEFAULT '2025/2026',
+    setup_wizard_completed BOOLEAN NOT NULL DEFAULT FALSE,  -- Flag untuk setup wizard
     updated_by UUID,  -- bisa guru atau super_admin
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Insert default row (single row for school identity)
-INSERT INTO identitas_sekolah (nama_sekolah, tahun_ajaran)
-VALUES ('Nama Sekolah', '2025/2026');
+-- Note: Default row akan dibuat saat setup wizard pertama kali dijalankan
+-- Tidak ada INSERT default karena setup wizard akan mengisi data sekolah
 ```
 
 ---
@@ -672,4 +677,4 @@ VALUES ('1234567890', 'Siswa Test', '$2b$10$...hashed_password...',
 
 ---
 
-**Document Status:** ✅ Complete - Ready for Supabase migration.
+**Document Status:** ✅ Complete v2.1 - Clarified seed storage, added setup_wizard_completed flag.
