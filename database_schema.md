@@ -1,8 +1,10 @@
 # DATABASE SCHEMA - Cerdas-CBT
 
-**Database:** PostgreSQL (Neon for online, Docker for offline)
-**Versi:** 1.1.0
+**Database:** Supabase PostgreSQL (Managed)
+**Storage:** Supabase Storage (1GB free tier)
+**Versi:** 2.0.0
 **Tanggal:** 31 Maret 2026
+**Fase:** 1 - Online Mode (Vercel + Supabase)
 
 ---
 

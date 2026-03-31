@@ -1,11 +1,11 @@
-# PRODUCT REQUIREMENTS DOCUMENT (PRD) - v2.1
+# PRODUCT REQUIREMENTS DOCUMENT (PRD) - v3.0
 
 **Nama Aplikasi:** Cerdas-CBT (Computer Based Test)
 **Penulis:** EAS Creative Studio
 **Kontak Developer:** eas.creative.studio@gmail.com
-**Versi:** 2.3.0
+**Versi:** 3.0.0
 **Tanggal:** 31 Maret 2026
-**Status:** Final (Audit + Deployment Complete)
+**Status:** Final - Fase 1 (Online Mode)
 
 ---
 
@@ -13,9 +13,20 @@
 
 **Cerdas-CBT** adalah aplikasi ujian berbasis web (Next.js) untuk memfasilitasi guru dalam manajemen soal, manajemen data siswa, dan pelaksanaan ujian pilihan ganda secara *real-time*. Aplikasi ini mendukung **mobile-first** design dengan target **200 concurrent users**.
 
-### 1.1. Prioritas Development
-1. **Fase 1 (Online):** Development dan deployment versi online di Vercel + Neon PostgreSQL.
-2. **Fase 2 (Offline):** Setelah versi online stabil, development versi offline dengan Docker + PostgreSQL local.
+### 1.1. Development Phases
+
+| Fase | Mode | Status | Timeline |
+|------|------|--------|----------|
+| **Fase 1** | Online (Supabase + Vercel) | **Active** | 4-6 minggu |
+| **Fase 2** | Offline (Docker + PostgreSQL) | Future | Setelah Fase 1 stabil |
+
+### 1.2. Tech Stack (Fase 1)
+* **Framework:** Next.js 14+ (App Router)
+* **Hosting:** Vercel (auto-deploy dari GitHub)
+* **Database:** Supabase PostgreSQL (managed)
+* **Storage:** Supabase Storage (gambar soal, 1GB free tier)
+* **Auth:** Supabase Auth (built-in)
+* **Real-time:** Supabase Realtime (WebSocket built-in)
 
 ---
 
@@ -217,70 +228,60 @@
 
 ## 6. Spesifikasi Teknis
 
-### 6.1. Framework & Platform
+### 6.1. Framework & Platform (Fase 1)
 * **Framework:** Next.js 14+ (App Router).
 * **Styling:** Tailwind CSS.
 * **UI Components:** Shadcn UI.
 * **Icons:** Lucide React.
-* **Deployment Online:** Vercel (auto-deploy dari GitHub).
-* **Deployment Offline:** Windows Server + Docker (portable installer).
-* **Database:**
-  * **Online:** Neon PostgreSQL (cloud, compatible dengan Vercel).
-  * **Offline:** PostgreSQL (Docker container, local).
-* **Autentikasi:** Custom auth dengan bcrypt (tidak menggunakan Supabase Auth untuk fleksibilitas offline).
+* **Hosting:** Vercel (auto-deploy dari GitHub).
+* **Database:** Supabase PostgreSQL (managed, free tier 512MB).
+* **Storage:** Supabase Storage (1GB free tier untuk gambar soal).
+* **Auth:** Supabase Auth (built-in, free tier 50K users).
+* **Real-time:** Supabase Realtime (WebSocket built-in).
 
-### 6.2. Deployment Modes
+### 6.2. Deployment (Fase 1 - Online)
 
-#### Mode Online (Vercel + Neon)
 ```
-GitHub Repository → Vercel Auto-deploy → Neon PostgreSQL (Cloud)
+GitHub Repository → Vercel Auto-deploy → Supabase (DB + Storage + Auth)
 ```
+
 * Push ke GitHub → Vercel auto-build dan deploy.
-* Database: Neon PostgreSQL (free tier 512MB).
+* Database: Supabase PostgreSQL (free tier 512MB).
+* Storage: Supabase Storage (free tier 1GB = ~2000 gambar @ 500KB).
+* Auth: Supabase Auth (free tier 50K monthly active users).
 * Access: `https://cbt-xxx.vercel.app`
 
-#### Mode Offline (Windows Server + Docker)
-```
-Windows Installer → Docker Desktop → PostgreSQL Container → Next.js App
-```
-* Guru run installer `next-cbt-setup.exe`.
-* Installer setup Docker Desktop + PostgreSQL container.
-* Start app via shortcut atau `start.bat`.
-* Access: `http://localhost:3000` atau `http://192.168.x.x:3000` (IP local).
-* Siswa akses via browser dari device lain di jaringan lokal.
+**Biaya:**
+- Vercel: Free (hobby project).
+- Supabase: Free tier (cukup untuk 200 users, 500 soal bergambar).
+- Total: **$0/bulan** untuk tahap awal.
 
-**Setup Files:**
-```
-📁 next-cbt-windows-installer/
-├── setup.exe           ← Windows installer (NSIS/Inno Setup)
-├── docker-compose.yml  ← PostgreSQL + Next.js config
-├── start.bat           ← Script start app
-├── stop.bat            ← Script stop app
-├── reset-admin.bat     ← Reset super admin password
-└── README.txt          ← Dokumentasi
-```
-
-### 6.3. Database Configuration
-| Mode | Database | Connection String |
-|------|----------|-------------------|
-| Online (Vercel) | Neon PostgreSQL | `DATABASE_URL="postgresql://...@neon.tech/..."` |
-| Offline (Windows) | PostgreSQL (Docker) | `DATABASE_URL="postgresql://cbt_user:cbt_pass@localhost:5432/cbt_local"` |
-
-### 6.4. Real-time & Sync
-* **Monitoring Guru:** WebSocket atau polling untuk real-time nilai update.
-* **Auto-save:** Real-time per jawaban ke server.
-* **Offline Mode (Siswa):** LocalStorage backup + auto-sync saat online.
-
-### 6.5. Performance Target
+### 6.3. Performance Target
 * **Concurrent Users:** Target maksimal **200 siswa** ujian bersamaan.
 * **Response Time:** < 500ms untuk API calls.
-* **Database:** Connection pooling (PgBouncer atau connection pool driver).
+* **Image Load Time:** < 1 detik (CDN Supabase Storage).
+* **Database Connection:** Connection pooling via Supabase.
 
-### 6.6. Security
-* **Password Hashing:** bcrypt (10 rounds).
+### 6.4. Security
+* **Password Hashing:** Supabase Auth (bcrypt default).
 * **Anti-cheating:** Fullscreen mode + deteksi tab switch.
 * **Audit Log:** Semua aktivitas dicatat (login, CRUD data, submit ujian).
-* **CORS:** Whitelist untuk domain Vercel dan local network.
+* **CORS:** Whitelist untuk domain Vercel.
+* **RLS (Row Level Security):** Supabase RLS policies untuk data isolation.
+
+### 6.5. Future Plans (Fase 2 - Offline Mode)
+
+Setelah Fase 1 stabil (3-6 bulan), akan dikembangkan offline mode:
+
+```
+Windows Installer → Docker Desktop → PostgreSQL + MinIO → Next.js App
+```
+
+* **Database:** PostgreSQL (Docker container, local).
+* **Storage:** MinIO (S3-compatible, self-hosted).
+* **Auth:** Custom auth (bcrypt).
+* **Deployment:** Windows installer (Inno Setup + Docker).
+* **Access:** `http://192.168.x.x:3000` (local network).
 
 ---
 
@@ -344,11 +345,12 @@ Windows Installer → Docker Desktop → PostgreSQL Container → Next.js App
 
 ### 10.1. External Resources
 * Next.js Documentation: https://nextjs.org/docs
-* Neon PostgreSQL: https://neon.tech/docs
-* Docker Documentation: https://docs.docker.com
+* Supabase Documentation: https://supabase.com/docs
+* Supabase Storage: https://supabase.com/docs/guides/storage
+* Supabase Auth: https://supabase.com/docs/guides/auth
+* Vercel Documentation: https://vercel.com/docs
 * MathJax Documentation: https://docs.mathjax.org
 * Inter Font: https://fonts.google.com/specimen/Inter
-* Inno Setup (Windows Installer): https://jrsoftware.org/isinfo.php
 * Tailwind CSS: https://tailwindcss.com/docs
 * Shadcn UI: https://ui.shadcn.com
 
@@ -356,7 +358,7 @@ Windows Installer → Docker Desktop → PostgreSQL Container → Next.js App
 * `design_system.md` - UI/UX Design System Specification
 * `database_schema.md` - Database Schema & ERD
 * `api_endpoints.md` - REST API Specification
-* `deployment_config.md` - Deployment Configuration
+* `deployment_config.md` - Deployment Configuration (Fase 1)
 
 ---
 
@@ -368,4 +370,4 @@ Windows Installer → Docker Desktop → PostgreSQL Container → Next.js App
 
 ---
 
-**Document Status:** ✅ Final v2.3 - Ready for development (Online-first priority).
+**Document Status:** ✅ Final v3.0 - Fase 1 (Online Mode) Ready for Development.

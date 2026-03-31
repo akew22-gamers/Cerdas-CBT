@@ -1,465 +1,192 @@
 # DEPLOYMENT CONFIGURATION - Cerdas-CBT
 
-**Versi:** 1.1.0
+**Versi:** 2.0.0
 **Tanggal:** 31 Maret 2026
-**Development Priority:** Online-first (Vercel + Neon), then Offline (Docker)
+**Fase:** 1 - Online Mode (Vercel + Supabase)
 
 ---
 
-## 1. Deployment Architecture
+## 1. Deployment Architecture (Fase 1)
 
-### Development Phases
-
-| Phase | Mode | Status | Priority |
-|-------|------|--------|----------|
-| **Phase 1** | Online (Vercel + Neon) | Active | High |
-| **Phase 2** | Offline (Docker + PostgreSQL) | Future | Medium |
+### 1.1. Online Mode - Vercel + Supabase
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  PHASE 1: ONLINE (Vercel + Neon) - PRIORITY                 │
+│  FASE 1: ONLINE MODE (Production)                            │
 │                                                             │
 │  GitHub Repository                                          │
 │  ┌─────────────────┐                                        │
 │  │ cerdas-cbt/     │ ──────► Vercel Auto-deploy             │
 │  │ ├── src/        │         ┌─────────────────┐            │
-│  │ ├── prisma/     │         │ Vercel Server   │            │
-│  │ └── ...         │         │ + Neon Postgres │            │
-│  └─────────────────┘         │ https://cbt... │            │
-│                              └─────────────────┘            │
+│  │ ├── app/        │         │ Vercel Server   │            │
+│  │ ├── prisma/     │         │ (Edge/Serverless│            │
+│  │ └── ...         │         │ + Supabase)     │            │
+│  └─────────────────┘         │ https://cbt...  │            │
+│         │                    └────────┬────────┘            │
+│         │                             │                      │
+│         │         ┌───────────────────┼───────────────────┐  │
+│         │         │                   │                   │  │
+│         ▼         ▼                   ▼                   ▼  │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│  │ Supabase DB     │  │ Supabase Storage│  │ Supabase Auth   │
+│  │ (PostgreSQL)    │  │ (1GB free)      │  │ (50K users)     │
+│  │ 512MB free      │  │ Gambar soal     │  │ Login/Signup    │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘
 └─────────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────────┐
-│  PHASE 2: OFFLINE (Windows Server + Docker) - FUTURE        │
-│                                                             │
-│  Windows PC (Guru)                                          │
-│  ┌─────────────────┐                                        │
-│  │ Docker Desktop  │ (Installed via setup.exe)              │
-│  └─────────────────┘                                        │
-│         │                                                   │
-│         ▼                                                   │
-│  ┌─────────────────┐  ┌─────────────────┐                   │
-│  │ PostgreSQL      │  │ Next.js App     │                   │
-│  │ (Container)     │◄─│ (Container)     │                   │
-│  │ Port: 5432      │  │ Port: 3000      │                   │
-│  └─────────────────┘  └─────────────────┘                   │
-│                             │                               │
-│                             ▼                               │
-│                  http://192.168.x.x:3000                     │
-│                             │                               │
-│  ┌─────────────────┬─────────────────┬─────────────────┐   │
-│  │ Siswa 1         │ Siswa 2         │ Siswa 3         │   │
-│  │ (Browser)       │ (Browser)       │ (Browser)       │   │
-│  └─────────────────┴─────────────────┴─────────────────┘   │
-│  Access via local network (WiFi/LAN)                        │
-└─────────────────────────────────────────────────────────────┘
+Access: https://cbt-xxx.vercel.app
 ```
+
+### 1.2. Tech Stack
+
+| Component | Service | Free Tier |
+|-----------|---------|-----------|
+| **Frontend** | Next.js 14+ (Vercel) | Free (Hobby) |
+| **Database** | Supabase PostgreSQL | 512MB |
+| **Storage** | Supabase Storage | 1GB |
+| **Auth** | Supabase Auth | 50K users/month |
+| **Realtime** | Supabase Realtime | 200 concurrent |
+| **CDN** | Vercel Edge Network | 100GB bandwidth |
+
+### 1.3. Timeline
+
+| Phase | Description | Timeline |
+|-------|-------------|----------|
+| **Setup** | Supabase project + Vercel config | 1-2 hari |
+| **Development** | Core features (auth, CRUD, ujian) | 4-6 minggu |
+| **Testing** | UAT dengan guru & siswa | 1-2 minggu |
+| **Deployment** | Production launch | 1 hari |
 
 ---
 
-## 2. Docker Compose Configuration
+## 2. Supabase Setup
 
-### 2.1. docker-compose.yml
+### 2.1. Create Supabase Project
 
-```yaml
-version: '3.8'
+1. Go to https://supabase.com
+2. Sign up / Login
+3. Create new project:
+   - **Project name:** `cerdas-cbt`
+   - **Database password:** (save to password manager)
+   - **Region:** `Asia Pacific (Singapore)` - closest to Indonesia
+   - **Pricing plan:** Free tier
 
-services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: cbt-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: cbt_local
-      POSTGRES_USER: cbt_user
-      POSTGRES_PASSWORD: cbt_pass
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cbt_user -d cbt_local"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+4. Wait for provisioning (~2 menit)
 
-  # Next.js Application
-  cbt-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: cbt-app
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql://cbt_user:cbt_pass@postgres:5432/cbt_local
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
-      NODE_ENV: production
-    ports:
-      - "3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+### 2.2. Database Setup
 
-volumes:
-  postgres_data:
+**Option A: Run SQL directly in Supabase SQL Editor**
+
+```sql
+-- Copy all SQL from database_schema.md Section 2
+-- Run in Supabase SQL Editor
 ```
 
-### 2.2. Dockerfile (Next.js)
+**Option B: Use Prisma Migrate**
 
-```dockerfile
-# Stage 1: Build
-FROM node:18-alpine AS builder
+```bash
+# Install Prisma
+npm install prisma @prisma/client --save-dev
 
-WORKDIR /app
+# Initialize Prisma
+npx prisma init
 
-# Copy package files
-COPY package.json package-lock.json ./
+# Configure schema.prisma
+# Run migration
+npx prisma migrate dev --name init
 
-# Install dependencies
-RUN npm ci
-
-# Copy source files
-COPY . .
-
-# Generate Prisma Client
-RUN npx prisma generate
-
-# Build Next.js
-RUN npm run build
-
-# Stage 2: Production
-FROM node:18-alpine AS runner
-
-WORKDIR /app
-
-# Set to production
-ENV NODE_ENV=production
-
-# Copy necessary files
-COPY --from=builder /app/next.config.js ./
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/prisma ./prisma
-
-# Install only production dependencies
-RUN npm ci --only=production
-
-# Generate Prisma Client
-RUN npx prisma generate
-
-# Expose port
-EXPOSE 3000
-
-# Start app
-CMD ["npm", "start"]
+# Deploy to production
+npx prisma migrate deploy
 ```
+
+### 2.3. Create Storage Bucket
+
+Go to Supabase Dashboard → Storage → Create new bucket
+
+```
+Bucket name: soal-images
+Public: true
+File size limit: 5242880 (5MB)
+```
+
+**Storage Policy (RLS):**
+
+```sql
+-- Allow authenticated users to upload
+CREATE POLICY "Users can upload images"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'soal-images');
+
+-- Allow public to read
+CREATE POLICY "Public can view images"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'soal-images');
+```
+
+### 2.4. Configure Auth
+
+Go to Supabase Dashboard → Authentication → Providers
+
+**Email/Password:** Enabled by default
+
+**Additional settings:**
+- Disable email confirmation (for faster onboarding):
+  - Authentication → Settings →Disable email confirmations
+- Rate limiting: 30 requests per hour per IP
 
 ---
 
-## 3. Windows Installer Files
+## 3. Vercel Setup
 
-### 3.1. Directory Structure
+### 3.1. Connect GitHub to Vercel
 
-```
-📁 next-cbt-windows-installer/
-├── 📁 src/
-│   ├── setup.iss              ← Inno Setup script
-│   ├── license.txt            ← License agreement
-│   └── README.txt             ← User manual
-├── 📁 scripts/
-│   ├── start.bat              ← Start app script
-│   ├── stop.bat               ← Stop app script
-│   ├── reset-admin.bat        ← Reset super admin
-│   ├── check-docker.bat       ← Check Docker status
-│   └── backup-data.bat        ← Backup database
-├── 📁 docker/
-│   ├── docker-compose.yml     ← Docker compose config
-│   ├── Dockerfile             ← Next.js Dockerfile
-│   ├── init-db.sql            ← Initial database setup
-│   └── .env.example           ← Environment template
-├── 📁 app/
-│   └── next-cbt/              ← Pre-built Next.js app
-│       ├── .next/
-│       ├── public/
-│       ├── prisma/
-│       ├── package.json
-│       └── next.config.js
-├── output/
-│   └── next-cbt-setup.exe     ← Generated installer
-└── build-installer.bat        ← Script to build installer
-```
+1. Go to https://vercel.com
+2. Login with GitHub
+3. Import project:
+   - Select repository: `akew22-gamers/Cerdas-CBT`
+   - Framework Preset: Next.js
+   - Root Directory: `./`
 
-### 3.2. setup.iss (Inno Setup Script)
+### 3.2. Environment Variables
 
-```iss
-; Next-CBT Windows Installer
-; Generated with Inno Setup
-
-[Setup]
-AppName=Next-CBT
-AppVersion=2.1.0
-AppPublisher=Eka Ahmad
-DefaultDirName={pf}\Next-CBT
-DefaultGroupName=Next-CBT
-OutputDir=output
-OutputBaseFilename=next-cbt-setup
-Compression=lzma2
-SolidCompression=yes
-SetupIconFile=src\icon.ico
-WizardImageFile=src\wizard.bmp
-WizardSmallImageFile=src\wizard-small.bmp
-PrivilegesRequired=admin
-
-[Languages]
-Name: "indonesian"; MessagesFile: "compiler:Languages\Indonesian.isl"
-Name: "english"; MessagesFile: "compiler:Default.isl"
-
-[Files]
-; Copy all app files
-Source: "app\next-cbt\*"; DestDir: "{app}\app"; Flags: recursesubdirs
-; Copy Docker files
-Source: "docker\*"; DestDir: "{app}\docker"; Flags: recursesubdirs
-; Copy scripts
-Source: "scripts\*"; DestDir: "{app}"; Flags: recursesubdirs
-; Copy docs
-Source: "src\README.txt"; DestDir: "{app}"
-Source: "src\license.txt"; DestDir: "{app}"
-
-[Icons]
-Name: "{group}\Start CBT"; Filename: "{app}\start.bat"
-Name: "{group}\Stop CBT"; Filename: "{app}\stop.bat"
-Name: "{group}\Reset Admin Password"; Filename: "{app}\reset-admin.bat"
-Name: "{group}\Backup Data"; Filename: "{app}\backup-data.bat"
-Name: "{group}\README"; Filename: "{app}\README.txt"
-Name: "{group}\Uninstall"; Filename: "{uninstallexe}"
-
-[Run]
-Filename: "{app}\start.bat"; Description: "Start CBT now"; Flags: postinstall nowait skipifdoesntexist
-
-[Registry]
-; Add to PATH (optional)
-Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "PATH"; ValueData: "{app};{olddata}"; Flags: preservestringtype
-
-[Code]
-function InitializeSetup(): Boolean;
-var
-  DockerInstalled: Boolean;
-begin
-  Result := True;
-  
-  ; Check if Docker Desktop is installed
-  DockerInstalled := RegKeyExists(HKCU, 'Software\Docker Inc.\Docker Desktop');
-  
-  if not DockerInstalled then
-  begin
-    if MsgBox('Docker Desktop is required but not installed. Do you want to download it now?', mbConfirmation, MB_YESNO) = IDYES then
-    begin
-      ; Open Docker download page
-      ShellExec('open', 'https://www.docker.com/products/docker-desktop', '', '', SW_SHOW, ewNoWait, ErrorCode);
-      Result := False;
-    end
-    else
-    begin
-      MsgBox('Docker Desktop is required. Setup cannot continue.', mbError, MB_OK);
-      Result := False;
-    end;
-  end;
-end;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssPostInstall then
-  begin
-    ; Create .env file
-    SaveStringToFile(ExpandConstant('{app}\docker\.env'), 
-      'DATABASE_URL=postgresql://cbt_user:cbt_pass@postgres:5432/cbt_local' + #13#10 +
-      'NEXTAUTH_SECRET=your-secret-key-change-this' + #13#10 +
-      'NEXTAUTH_URL=http://localhost:3000' + #13#10 +
-      'SUPER_ADMIN_USERNAME=admin' + #13#10 +
-      'SUPER_ADMIN_PASSWORD=admin123' + #13#10,
-      False);
-    
-    MsgBox('Setup complete! Please start Docker Desktop and run "Start CBT" to begin.', mbInformation, MB_OK);
-  end;
-end;
-```
-
-### 3.3. start.bat
-
-```batch
-@echo off
-echo ========================================
-echo   Starting Next-CBT...
-echo ========================================
-echo.
-
-REM Check if Docker is running
-docker info >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Docker is not running!
-    echo Please start Docker Desktop first.
-    pause
-    exit /b 1
-)
-
-REM Navigate to docker directory
-cd /d "%~dp0docker"
-
-REM Start containers
-echo [1/3] Starting PostgreSQL database...
-docker-compose up -d postgres
-
-REM Wait for PostgreSQL to be ready
-echo [2/3] Waiting for database to be ready...
-timeout /t 10 /nobreak >nul
-
-REM Run migrations
-echo [3/3] Running database migrations...
-docker-compose run --rm cbt-app npx prisma migrate deploy
-
-REM Start Next.js app
-echo [4/3] Starting Next.js application...
-docker-compose up -d cbt-app
-
-echo.
-echo ========================================
-echo   Next-CBT is running!
-echo ========================================
-echo.
-echo   Local:   http://localhost:3000
-echo   Network: http://%COMPUTERNAME%:3000
-echo.
-echo   Press any key to open browser...
-pause >nul
-start http://localhost:3000
-```
-
-### 3.4. stop.bat
-
-```batch
-@echo off
-echo ========================================
-echo   Stopping Next-CBT...
-echo ========================================
-echo.
-
-cd /d "%~dp0docker"
-docker-compose down
-
-echo.
-echo Next-CBT has been stopped.
-pause
-```
-
-### 3.5. reset-admin.bat
-
-```batch
-@echo off
-echo ========================================
-echo   Reset Super Admin Password
-echo ========================================
-echo.
-
-set /p NEW_PASSWORD="Enter new password: "
-
-cd /d "%~dp0docker"
-
-REM Run reset script
-docker-compose run --rm cbt-app npx prisma db execute --stdin <<< "UPDATE super_admin SET password_hash = crypt('%NEW_PASSWORD%', gen_salt('bf')) WHERE username = 'admin';"
-
-echo.
-echo Super admin password has been reset to: %NEW_PASSWORD%
-pause
-```
-
-### 3.6. backup-data.bat
-
-```batch
-@echo off
-echo ========================================
-echo   Backup Next-CBT Database
-echo ========================================
-echo.
-
-set BACKUP_DIR=%~dp0backups
-set TIMESTAMP=%date:~-4,4%%date:~-7,2%%date:~-10,2%_%time:~0,2%%time:~3,2%%time:~6,2%
-set BACKUP_FILE=%BACKUP_DIR%\cbt_backup_%TIMESTAMP%.sql
-
-REM Create backup directory
-if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
-
-cd /d "%~dp0docker"
-
-REM Create backup
-docker-compose exec -T postgres pg_dump -U cbt_user cbt_local > "%BACKUP_FILE%"
-
-echo.
-echo Backup created: %BACKUP_FILE%
-pause
-```
-
----
-
-## 4. Environment Configuration
-
-### 4.1. .env.example (Offline)
+Add these in Vercel Dashboard → Project Settings → Environment Variables:
 
 ```env
-# Database (PostgreSQL Docker)
-DATABASE_URL="postgresql://cbt_user:cbt_pass@postgres:5432/cbt_local"
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL="https://xyz.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 
-# NextAuth
-NEXTAUTH_SECRET="your-secret-key-change-this"
-NEXTAUTH_URL="http://localhost:3000"
-
-# Super Admin (Predefined)
-SUPER_ADMIN_USERNAME="admin"
-SUPER_ADMIN_PASSWORD="admin123"
-
-# App Config
-NODE_ENV="production"
-```
-
-### 4.2. .env (Online - Vercel Dashboard)
-
-```env
-# Database (Neon PostgreSQL)
-DATABASE_URL="postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/cbt?sslmode=require"
-
-# NextAuth (Generate with: openssl rand -base64 32)
-NEXTAUTH_SECRET="generated-secret-key"
-NEXTAUTH_URL="https://cbt-xxx.vercel.app"
-
-# Super Admin
+# App Configuration
+NEXT_PUBLIC_APP_URL="https://cbt-xxx.vercel.app"
 SUPER_ADMIN_USERNAME="admin"
 SUPER_ADMIN_PASSWORD="secure-password-change-this"
 
-# App Config
-NODE_ENV="production"
+# Optional: For NextAuth (if not using Supabase Auth)
+NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
+NEXTAUTH_URL="https://cbt-xxx.vercel.app"
 ```
 
----
+### 3.3. Build Settings
 
-## 5. Vercel Configuration
+```json
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "outputDirectory": ".next"
+}
+```
 
-### 5.1. vercel.json
+### 3.4. vercel.json
 
 ```json
 {
   "buildCommand": "npx prisma generate && next build",
   "installCommand": "npm install",
-  "devCommand": "next dev",
   "framework": "nextjs",
-  "regions": ["sin1", "iad1"],
+  "regions": ["sin1"],
   "functions": {
     "app/api/**/*.ts": {
       "memory": 1024,
@@ -477,10 +204,15 @@ NODE_ENV="production"
 }
 ```
 
-### 5.2. GitHub Actions (CI/CD)
+---
+
+## 4. GitHub Actions (CI/CD)
+
+### 4.1. Create Workflow
+
+`.github/workflows/deploy.yml`:
 
 ```yaml
-# .github/workflows/deploy.yml
 name: Deploy to Vercel
 
 on:
@@ -494,6 +226,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
       
@@ -509,8 +242,8 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
       
-      - name: Run tests
-        run: npm test
+      - name: Run linting
+        run: npm run lint
       
       - name: Build
         run: npm run build
@@ -533,142 +266,202 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
 ```
 
----
+### 4.2. Add GitHub Secrets
 
-## 6. Neon PostgreSQL Setup (Online)
+Go to GitHub Repository → Settings → Secrets and variables → Actions
 
-### 6.1. Create Neon Project
-
-1. Go to https://neon.tech
-2. Sign up / Login
-3. Create new project:
-   - Project name: `next-cbt`
-   - Region: `US East (Ohio)` or `Asia Pacific (Singapore)`
-   - PostgreSQL version: `15`
-4. Get connection string from dashboard
-
-### 6.2. Add to Vercel
-
-1. Go to Vercel Dashboard → Project → Settings → Environment Variables
-2. Add:
-   - `DATABASE_URL` = Neon connection string
-   - `NEXTAUTH_SECRET` = generated secret
-   - `NEXTAUTH_URL` = `https://your-app.vercel.app`
-   - `SUPER_ADMIN_USERNAME` = `admin`
-   - `SUPER_ADMIN_PASSWORD` = secure password
+| Secret Name | Value |
+|-------------|-------|
+| `VERCEL_TOKEN` | From Vercel Dashboard → Account → Tokens |
+| `VERCEL_ORG_ID` | From Vercel CLI: `vercel whoami` |
+| `VERCEL_PROJECT_ID` | From Vercel Project URL |
 
 ---
 
-## 7. Database Migration Strategy
+## 5. Image Upload Implementation
 
-### 7.1. Prisma Schema
+### 5.1. API Route: Upload Image
 
-```prisma
-// prisma/schema.prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-}
-
-// Models defined in database_schema.md...
-```
-
-### 7.2. Migration Commands
-
-```bash
-# Create migration
-npx prisma migrate dev --name init
-
-# Deploy migration (production)
-npx prisma migrate deploy
-
-# Generate client
-npx prisma generate
-
-# Seed data
-npx prisma db seed
-```
-
-### 7.3. Seed Script
+`app/api/upload/image/route.ts`:
 
 ```typescript
-// prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
 
-const prisma = new PrismaClient();
-
-async function main() {
-  // Create super admin
-  const passwordHash = await bcrypt.hash(process.env.SUPER_ADMIN_PASSWORD!, 10);
+export async function POST(req: NextRequest) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   
-  await prisma.superAdmin.upsert({
-    where: { username: process.env.SUPER_ADMIN_USERNAME! },
-    update: {},
-    create: {
-      username: process.env.SUPER_ADMIN_USERNAME!,
-      passwordHash: passwordHash,
-    },
+  const formData = await req.formData();
+  const file = formData.get('image') as File;
+  
+  if (!file) {
+    return NextResponse.json(
+      { error: 'No file provided' },
+      { status: 400 }
+    );
+  }
+  
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    return NextResponse.json(
+      { error: 'Invalid file type' },
+      { status: 400 }
+    );
+  }
+  
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    return NextResponse.json(
+      { error: 'File size exceeds 5MB' },
+      { status: 400 }
+    );
+  }
+  
+  // Generate unique filename
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${crypto.randomUUID()}.${fileExt}`;
+  
+  // Upload to Supabase Storage
+  const { data, error } = await supabase.storage
+    .from('soal-images')
+    .upload(`public/${fileName}`, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
+  
+  if (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
+  
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('soal-images')
+    .getPublicUrl(`public/${fileName}`);
+  
+  return NextResponse.json({
+    url: publicUrl,
+    fileName: fileName,
+    size: file.size
   });
-  
-  console.log('Seed completed');
 }
+```
 
-main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+### 5.2. Frontend: Upload Component
+
+`components/ImageUpload.tsx`:
+
+```typescript
+'use client';
+
+import { useState } from 'react';
+
+export function ImageUpload({ onChange }: { onChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+  
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploading(true);
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const res = await fetch('/api/upload/image', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const data = await res.json();
+    
+    if (data.url) {
+      onChange(data.url);
+    }
+    
+    setUploading(false);
+  }
+  
+  return (
+    <div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        disabled={uploading}
+      />
+      {uploading && <span>Uploading...</span>}
+    </div>
+  );
+}
 ```
 
 ---
 
-## 8. Troubleshooting
+## 6. Cost Estimation
 
-### 8.1. Common Issues
+### 6.1. Free Tier Limits
+
+| Resource | Free Tier | Asumsi 500 Soal + Gambar | Status |
+|----------|-----------|--------------------------|--------|
+| **Database** | 512MB | ~100MB | ✅ Free |
+| **Storage** | 1GB | ~250MB (500 × 500KB) | ✅ Free |
+| **Bandwidth** | 5GB/bulan | ~1GB/bulan | ✅ Free |
+| **Auth Users** | 50K/month | <1K users | ✅ Free |
+| **Realtime** | 200 concurrent | 200 concurrent | ✅ Free |
+| **Vercel** | 100GB bandwidth | ~10GB/bulan | ✅ Free |
+
+### 6.2. Overage Pricing (If needed)
+
+| Resource | Overage Cost |
+|----------|--------------|
+| Database | $0.02/GB-month |
+| Storage | $0.021/GB-month |
+| Bandwidth | $0.05/GB |
+
+**Estimated Cost for 200 users:** $0/bulan (within free tier)
+
+---
+
+## 7. Troubleshooting
+
+### 7.1. Common Issues
 
 | Issue | Solution |
 |-------|----------|
-| Docker not running | Start Docker Desktop |
-| Port 3000 occupied | Check `netstat -ano | findstr :3000` |
-| Port 5432 occupied | Check PostgreSQL native installed? |
-| Database connection failed | Check DATABASE_URL in .env |
-| Cannot access from network | Check firewall settings |
+| Build fails on Vercel | Check `npx prisma generate` in build command |
+| Image upload fails | Check Storage bucket permissions |
+| Auth not working | Verify SUPABASE_ANON_KEY |
+| Slow image load | Enable CDN caching in Supabase Storage |
+| Database connection error | Check DATABASE_URL format |
 
-### 8.2. Firewall Configuration (Windows)
+### 7.2. Support Resources
 
-```powershell
-# Allow port 3000
-netsh advfirewall firewall add rule name="Next-CBT App" dir=in action=allow protocol=TCP localport=3000
-
-# Allow port 5432 (if needed)
-netsh advfirewall firewall add rule name="PostgreSQL" dir=in action=allow protocol=TCP localport=5432
-```
+- Supabase Docs: https://supabase.com/docs
+- Vercel Docs: https://vercel.com/docs
+- Supabase Discord: https://discord.supabase.com
+- Vercel Community: https://github.com/vercel/next.js/discussions
 
 ---
 
-## 9. System Requirements
+## 8. Future Plans (Fase 2 - Offline Mode)
 
-### 9.1. Server (Offline Mode)
+Setelah Fase 1 stabil (3-6 bulan):
 
-| Requirement | Minimum | Recommended |
-|-------------|---------|-------------|
-| OS | Windows 10/11 | Windows 10/11 Pro |
-| CPU | Dual-core | Quad-core |
-| RAM | 4 GB | 8 GB |
-| Storage | 10 GB | 20 GB |
-| Docker Desktop | Required | Required |
-
-### 9.2. Client (Siswa)
-
-| Requirement | Minimum |
-|-------------|---------|
-| Browser | Chrome 90+, Edge 90+, Firefox 88+ |
-| Device | Desktop, Laptop, Tablet, Smartphone |
-| Network | WiFi/LAN connection to server |
+| Component | Fase 1 (Online) | Fase 2 (Offline) |
+|-----------|-----------------|------------------|
+| **Hosting** | Vercel | Docker (Windows) |
+| **Database** | Supabase PostgreSQL | PostgreSQL (Docker) |
+| **Storage** | Supabase Storage | MinIO (S3-compatible) |
+| **Auth** | Supabase Auth | Custom bcrypt |
+| **Sync** | Real-time | Manual export/import |
 
 ---
 
-**Document Status:** ✅ Complete - Ready for deployment implementation.
+**Document Status:** ✅ Final v2.0 - Fase 1 Ready for Deployment.
