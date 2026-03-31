@@ -1,11 +1,11 @@
-# PRODUCT REQUIREMENTS DOCUMENT (PRD) - v3.1
+# PRODUCT REQUIREMENTS DOCUMENT (PRD) - v3.2
 
 **Nama Aplikasi:** Cerdas-CBT (Computer Based Test)
 **Penulis:** EAS Creative Studio
 **Kontak Developer:** eas.creative.studio@gmail.com
-**Versi:** 3.1.0
+**Versi:** 3.2.0
 **Tanggal:** 31 Maret 2026
-**Status:** Final - Fase 1 (Online Mode) - Clarified
+**Status:** Final - Fase 1 (Online Mode) - Complete Documentation
 
 ---
 
@@ -53,14 +53,30 @@
 
 ### 2.4. Setup Wizard (First-Run)
 - **Trigger:** Setup wizard muncul saat aplikasi pertama kali di-deploy (belum ada data sekolah).
+- **Security:** Setup wizard dilindungi oleh **Setup Token** yang disimpan di environment variable `SETUP_TOKEN`.
 - **Proses Setup:**
-  1. Buat akun super-admin (username & password)
-  2. Input identitas sekolah (nama, NPSN, alamat, logo, tahun ajaran)
-  3. Konfirmasi setup
+  1. Validasi setup token (harus match dengan `SETUP_TOKEN` di ENV)
+  2. Buat akun super-admin (username & password)
+  3. Input identitas sekolah (nama, NPSN, alamat, logo, tahun ajaran)
+  4. Konfirmasi setup
 - **Setelah Setup:**
-  - Wizard tidak muncul lagi (flag `setup_completed = true` di database)
+  - Wizard tidak muncul lagi (flag `setup_wizard_completed = true` di database)
   - Super-admin dapat login dan mulai membuat akun guru
-- **Reset Setup:** Jika ingin reset setup, jalankan script migration reset atau manual DB update.
+  - Token tidak lagi diperlukan untuk setup (sudah completed)
+- **Reset Setup:** Jika ingin reset setup, jalankan script migration reset atau manual DB update:
+  - `UPDATE identitas_sekolah SET setup_wizard_completed = false;`
+  - `DELETE FROM super_admin;`
+  - Kemudian jalankan setup wizard lagi dengan token yang valid
+
+### 2.5. Session Management (Auto-Refresh)
+- **Session Duration:** JWT token berlaku selama 7 hari default.
+- **Auto-Refresh:** Middleware otomatis refresh token sebelum expire.
+- **Refresh Threshold:** Token di-refresh saat sisa waktu < 1 jam (configurable via `TOKEN_REFRESH_THRESHOLD`).
+- **During Exam:** Session tetap aktif selama siswa dalam ujian - tidak ada timeout yang mengganggu.
+- **Implementation:**
+  - Middleware di Next.js memeriksa token expiry di setiap request
+  - Jika token hampir expire → panggil `/api/auth/refresh` secara silent
+  - User experience: seamless, tidak perlu re-login
 
 ---
 
@@ -70,6 +86,7 @@
 * Guru dapat **membuat, mengubah, dan menghapus** kelas.
 * Atribut Kelas: Nama Kelas (contoh: "X IPA 1").
 * Siswa dapat di-assign ke satu kelas.
+* **Delete Constraint:** Kelas **hanya dapat dihapus jika tidak ada siswa** yang terdaftar di kelas tersebut. Jika ada siswa, tampilkan pesan error dan guru harus memindahkan atau menghapus siswa terlebih dahulu.
 
 ### 3.2. Modul Manajemen Siswa
 * **Atribut Data Siswa:** Nama, NISN (Primary Key), Kelas, Password.
@@ -114,7 +131,10 @@
   * Pengaturan visibility hasil siswa: **Tampilkan nilai akhir** atau **Sembunyikan**.
   * **Tidak ada deadline global** - ujian bisa dikerjakan kapan saja selama status aktif.
 * **Kode Ujian:** Setiap ujian memiliki kode unik (join code) yang siswa gunakan untuk masuk.
-* **Duplikasi Ujian:** Guru dapat duplikat ujian untuk membuat ujian baru dengan soal yang sama.
+* **Duplikasi Ujian:** Guru dapat duplikat ujian untuk membuat ujian baru.
+  * **Yang di-duplicate:** Metadata ujian (judul, durasi, jumlah_opsi, show_result) dan semua soal.
+  * **Yang TIDAK di-duplicate:** Kelas assignment (guru harus assign kelas manual setelah duplicate) dan hasil ujian sebelumnya.
+  * **Status:** Ujian hasil duplicate selalu dalam status **Nonaktif** - guru harus assign kelas dan mengaktifkan secara manual.
 * **Hapus Ujian:** Tidak bisa hapus ujian jika ada siswa yang sedang mengerjakan (locked).
 
 ### 3.5. Modul Guru - Dashboard
@@ -127,7 +147,9 @@
 * **Statistik Per Soal:** Jumlah benar/salah per soal (basic).
 
 ### 3.5.1. Modul Konfigurasi Identitas Sekolah (Super-admin & Guru)
-* **Akses:** Menu konfigurasi tersedia di dashboard super-admin dan guru.
+* **Akses:**
+  * **Super-admin:** Dapat melihat dan mengubah identitas sekolah (full access).
+  * **Guru:** Dapat melihat identitas sekolah (read-only), tidak dapat mengubah.
 * **Atribut Identitas Sekolah:**
   * Nama Sekolah (contoh: "SMA Negeri 1 Jakarta")
   * NPSN (Nomor Pokok Sekolah Nasional)
@@ -395,4 +417,4 @@ Windows Installer → Docker Desktop → PostgreSQL + MinIO → Next.js App
 
 ---
 
-**Document Status:** ✅ Final v3.1 - Fase 1 (Online Mode) Clarified & Ready for Development.
+**Document Status:** ✅ Final v3.2 - Complete documentation with setup token security, session auto-refresh, kelas delete constraint, duplicate ujian clarification, guru profile management.

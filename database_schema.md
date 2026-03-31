@@ -2,7 +2,7 @@
 
 **Database:** Supabase PostgreSQL (Managed)
 **Storage:** Supabase Storage (1GB free tier)
-**Versi:** 2.1.0
+**Versi:** 2.2.0
 **Tanggal:** 31 Maret 2026
 **Fase:** 1 - Online Mode (Vercel + Supabase)
 
@@ -677,4 +677,4 @@ VALUES ('1234567890', 'Siswa Test', '$2b$10$...hashed_password...',
 
 ---
 
-**Document Status:** ✅ Complete v2.1 - Clarified seed storage, added setup_wizard_completed flag.
+**Document Status:** ✅ Complete v2.2 - Consistent with PRD v3.2 and API v1.3.

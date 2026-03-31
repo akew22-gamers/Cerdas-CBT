@@ -2,7 +2,7 @@
 
 **Framework:** Next.js 14+ (App Router)
 **API Style:** REST + WebSocket for real-time
-**Versi:** 1.2.0
+**Versi:** 1.3.0
 **Tanggal:** 31 Maret 2026
 
 ---
@@ -13,13 +13,15 @@
 /api
 ├── /setup
 │   ├── /status               GET     - Check setup wizard status
-│   └── /complete             POST    - Complete setup wizard (first-run only)
+│   ├── /validate             GET     - Validate setup token
+│   └── /complete             POST    - Complete setup wizard (requires token)
 │
 ├── /auth
 │   ├── /login              POST    - Login (super_admin, guru, siswa)
 │   ├── /logout             POST    - Logout
 │   ├── /me                 GET     - Get current user info
-│   └── /change-password    POST    - Change password (guru, siswa)
+│   ├── /change-password    POST    - Change password (super_admin, guru, siswa)
+│   └── /refresh            POST    - Refresh session token (auto-called by middleware)
 │
 ├── /admin
 │   ├── /guru
@@ -33,15 +35,20 @@
 │   │   ├── /               GET     - Get audit log (with filters)
 │   └── /sekolah
 │       ├── /               GET     - Get identitas sekolah
-│       └── /               PUT     - Update identitas sekolah
+│       └── /               PUT     - Update identitas sekolah (super-admin only)
 │
 ├── /guru
+│   ├── /profile
+│   │   ├── /               GET     - Get own profile
+│   │   └── /               PUT     - Update own profile (nama only)
+│   ├── /sekolah
+│   │   └── /               GET     - Get identitas sekolah (read-only)
 │   ├── /kelas
 │   │   ├── /               GET     - List kelas (owned by guru)
 │   │   ├── /               POST    - Create kelas
 │   │   ├── /[id]           GET     - Get kelas detail
 │   │   ├── /[id]           PUT     - Update kelas
-│   │   ├── /[id]           DELETE  - Delete kelas
+│   │   ├── /[id]           DELETE  - Delete kelas (only if no siswa)
 │   │
 │   ├── /siswa
 │   │   ├── /               GET     - List siswa (all or by kelas)
@@ -137,6 +144,11 @@
 
 **Purpose:** Complete setup wizard (create super-admin + school identity)
 
+**Headers:**
+```
+X-Setup-Token: your-secure-random-token-here
+```
+
 **Request:**
 ```json
 {
@@ -187,6 +199,55 @@
   }
 }
 ```
+
+**Error (Invalid Token):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_SETUP_TOKEN",
+    "message": "Token setup tidak valid"
+  }
+}
+```
+
+---
+
+### 2.3. GET `/api/setup/validate`
+
+**Purpose:** Validate setup token before completing setup
+
+**Headers:**
+```
+X-Setup-Token: your-secure-random-token-here
+```
+
+**Response (Valid Token):**
+```json
+{
+  "success": true,
+  "data": {
+    "token_valid": true,
+    "message": "Token valid, setup can proceed"
+  }
+}
+```
+
+**Error (Invalid Token):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_SETUP_TOKEN",
+    "message": "Token setup tidak valid"
+  }
+}
+```
+
+**Security Note:** 
+- The `X-Setup-Token` header must match the `SETUP_TOKEN` environment variable
+- This prevents unauthorized users from running the setup wizard
+- After setup is completed, the token becomes invalid for setup (but remains in ENV for reference)
 
 ---
 
@@ -273,7 +334,7 @@
 
 ### 2.4. POST `/api/auth/change-password`
 
-**Purpose:** Change password (guru atau siswa)
+**Purpose:** Change password (super_admin, guru, atau siswa)
 
 **Request:**
 ```json
@@ -286,6 +347,36 @@
 **Response:**
 ```json
 {
+  "success": true,
+  "message": "Password berhasil diubah"
+}
+```
+
+---
+
+### 2.5. POST `/api/auth/refresh`
+
+**Purpose:** Refresh session token (auto-called by middleware during exam)
+
+**Request:** (empty body, uses current session cookie)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "token": "new_jwt_token",
+    "expires_at": "2026-03-31T12:00:00Z",
+    "refreshed_at": "2026-03-31T11:00:00Z"
+  }
+}
+```
+
+**Important Notes:**
+- Middleware automatically calls this endpoint when token is close to expiry
+- `TOKEN_REFRESH_THRESHOLD` env variable controls when to refresh (default: 1 hour before expiry)
+- Prevents session timeout during active exams
+- User experience: seamless, no re-login required
   "success": true,
   "message": "Password berhasil diubah"
 }
@@ -460,7 +551,7 @@
 
 ### 3.8. PUT `/api/admin/sekolah`
 
-**Purpose:** Update identitas sekolah (super-admin & guru)
+**Purpose:** Update identitas sekolah (super-admin only)
 
 **Request:**
 ```json
@@ -501,7 +592,83 @@
 
 ## 4. Guru Endpoints
 
-### 4.1. Kelas
+### 4.1. Profile
+
+#### GET `/api/guru/profile`
+
+**Purpose:** Get own profile information
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "username": "guru1",
+    "nama": "Ahmad Guru",
+    "created_at": "2026-03-31T10:00:00Z"
+  }
+}
+```
+
+---
+
+#### PUT `/api/guru/profile`
+
+**Purpose:** Update own profile (nama only, username cannot be changed)
+
+**Request:**
+```json
+{
+  "nama": "Ahmad Guru Updated"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "username": "guru1",
+    "nama": "Ahmad Guru Updated",
+    "updated_at": "2026-03-31T11:00:00Z"
+  }
+}
+```
+
+---
+
+### 4.2. Sekolah (Read-Only)
+
+#### GET `/api/guru/sekolah`
+
+**Purpose:** Get identitas sekolah (read-only for guru)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nama_sekolah": "SMA Negeri 1 Jakarta",
+    "npsn": "12345678",
+    "alamat": "Jl. Pendidikan No. 1, Jakarta",
+    "logo_url": "https://storage.../logo.png",
+    "telepon": "021-1234567",
+    "email": "sekolah@example.com",
+    "website": "https://sekolah.sch.id",
+    "kepala_sekolah": "Dr. Nama Kepala Sekolah",
+    "tahun_ajaran": "2025/2026"
+  }
+}
+```
+
+**Note:** Guru can only view identitas sekolah. To update, super-admin must use `/api/admin/sekolah`.
+
+---
+
+### 4.3. Kelas
 
 #### GET `/api/guru/kelas`
 
@@ -550,11 +717,22 @@
 
 #### DELETE `/api/guru/kelas/[id]`
 
-**Note:** Hanya bisa hapus jika tidak ada siswa di kelas
+**Note:** Hanya bisa hapus jika tidak ada siswa di kelas. Jika ada siswa, tampilkan error:
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "KELAS_HAS_SISWA",
+    "message": "Tidak dapat menghapus kelas yang masih memiliki siswa"
+  }
+}
+```
 
 ---
 
-### 4.2. Siswa
+### 4.4. Siswa
 
 #### GET `/api/guru/siswa`
 
@@ -669,7 +847,7 @@
 
 ---
 
-### 4.3. Ujian
+### 4.5. Ujian
 
 #### GET `/api/guru/ujian`
 
@@ -759,6 +937,14 @@
 
 #### POST `/api/guru/ujian/[id]/duplicate`
 
+**Purpose:** Duplicate ujian with all soal
+
+**What Gets Duplicated:**
+- ✅ Ujian metadata (judul, durasi, jumlah_opsi, show_result)
+- ✅ All soal (teks_soal, gambar_url, jawaban_benar, pengecoh)
+- ❌ Kelas assignments (guru must assign kelas manually after duplicate)
+- ❌ Hasil ujian (previous exam results are not copied)
+
 **Response:**
 ```json
 {
@@ -768,10 +954,17 @@
     "kode_ujian": "DEF456",
     "judul": "Ujian Matematika Bab 1 (Copy)",
     "status": "nonaktif",
-    "soal_count": 50
+    "soal_count": 50,
+    "kelas_assigned": false,
+    "message": "Ujian berhasil diduplikasi. Silakan assign kelas yang akan mengikuti ujian ini."
   }
 }
 ```
+
+**Note:** Duplicated ujian always has `status: "nonaktif"` and no kelas assigned. Guru must:
+1. Review the duplicated soal
+2. Assign kelas via `/api/guru/ujian/[id]/kelas`
+3. Activate the ujian when ready
 
 ---
 
@@ -824,7 +1017,7 @@
 
 ---
 
-### 4.4. Soal
+### 4.6. Soal
 
 #### GET `/api/guru/soal`
 
@@ -908,7 +1101,7 @@
 
 ---
 
-### 4.5. Hasil & Dashboard
+### 4.7. Hasil & Dashboard
 
 #### GET `/api/guru/hasil`
 
@@ -1439,7 +1632,10 @@
 | `FILE_INVALID` | File format tidak valid |
 | `IMPORT_ERROR` | Error saat import data |
 | `KELAS_NOT_FOUND` | Nama kelas tidak ditemukan saat import |
+| `KELAS_HAS_SISWA` | Tidak bisa hapus kelas yang masih ada siswa |
 | `SETUP_ALREADY_COMPLETED` | Setup wizard sudah pernah dijalankan |
+| `INVALID_SETUP_TOKEN` | Token setup tidak valid |
+| `SESSION_EXPIRED` | Session sudah expire, perlu re-login |
 | `UNAUTHORIZED` | Tidak memiliki akses |
 | `VALIDATION_ERROR` | Data tidak valid |
 
@@ -1456,6 +1652,7 @@
 | `siswa_answer` | Siswa menyimpan jawaban (optional) |
 | `timer_warning` | Peringatan waktu (trigger saat sisa waktu ≤ 10% durasi) |
 | `cheating_alert` | Siswa melakukan cheating event |
+| `session_refreshed` | Session token berhasil di-refresh (silent) |
 
 ---
 
@@ -1464,10 +1661,40 @@
 | Endpoint | Limit |
 |----------|-------|
 | `/api/auth/login` | 10 req/min |
+| `/api/setup/complete` | 3 req/min (protected by token) |
 | `/api/siswa/ujian/*/jawaban` | 100 req/min (auto-save) |
 | `/api/upload/*` | 20 req/min |
 | Other endpoints | 60 req/min |
 
 ---
 
-**Document Status:** ✅ Complete v1.2 - Added setup wizard, clarified import kelas matching.
+## 12. Session Management
+
+### Auto-Refresh Strategy
+
+| Scenario | Behavior |
+|----------|----------|
+| Token expires in < 1 hour | Middleware auto-refreshes token |
+| During active exam | Session extended, no interruption |
+| After exam submission | Normal session expiry |
+| Idle > session expiry | User must re-login |
+
+### Token Lifecycle
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Login → JWT issued (7 days default)                        │
+│     ↓                                                       │
+│  Active use → Middleware checks expiry on each request      │
+│     ↓                                                       │
+│  Token < 1 hour expiry → Auto-refresh (transparent to user) │
+│     ↓                                                       │
+│  During exam → Token keeps refreshing (prevents timeout)    │
+│     ↓                                                       │
+│  Exam complete → Normal session continues                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+**Document Status:** ✅ Complete v1.3 - Added guru/profile, guru/sekolah (read-only), setup token security, session auto-refresh, duplicate ujian clarification.
