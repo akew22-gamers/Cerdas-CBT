@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import bcrypt from 'bcryptjs'
 import * as XLSX from 'xlsx'
 
@@ -17,7 +18,6 @@ interface ImportError {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
     const formData = await request.formData()
     const file = formData.get('file') as File
     const mode = formData.get('mode') as string || 'skip_existing'
@@ -49,21 +49,29 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const session = await getSession()
+    if (!session) {
       return NextResponse.json({
         success: false,
         error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' }
       }, { status: 401 })
     }
 
-    const guruId = user.id
+    if (session.user.role !== 'guru') {
+      return NextResponse.json({
+        success: false,
+        error: { code: 'FORBIDDEN', message: 'Akses ditolak' }
+      }, { status: 403 })
+    }
+
+    const supabase = createAdminClient()
+    const guruId = session.user.id
 
     const { data: kelasList } = await supabase
       .from('kelas')
       .select('id, nama_kelas')
 
-    const kelasMap = new Map(kelasList?.map(k => [k.nama_kelas.toLowerCase(), k.id]) || [])
+    const kelasMap = new Map(kelasList?.map((k: any) => [k.nama_kelas.toLowerCase(), k.id]) || [])
 
     const errors: ImportError[] = []
     let imported = 0

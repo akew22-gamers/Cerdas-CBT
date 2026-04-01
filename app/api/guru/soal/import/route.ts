@@ -1,21 +1,28 @@
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { read, utils } from 'xlsx'
 
 // POST /api/guru/soal/import - Import soal from Excel
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
 
     // Parse form data
     const formData = await request.formData()
@@ -34,7 +41,7 @@ export async function POST(request: Request) {
       .from('ujian')
       .select('id, status')
       .eq('id', ujian_id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (!ujian) {
@@ -139,7 +146,7 @@ export async function POST(request: Request) {
 
     // Log audit
     await supabase.from('audit_log').insert({
-      user_id: user.id,
+      user_id: session.user.id,
       role: 'guru',
       action: 'create',
       entity_type: 'soal',

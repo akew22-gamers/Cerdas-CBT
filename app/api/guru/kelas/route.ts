@@ -1,20 +1,27 @@
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 // GET /api/guru/kelas - List all kelas owned by current guru
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
 
     // Get all kelas created by this guru with jumlah siswa count
     const { data: kelasList, error } = await supabase
@@ -25,7 +32,7 @@ export async function GET() {
         created_at,
         siswa_count:siswa(count)
       `)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .order('nama_kelas', { ascending: true })
 
     if (error) {
@@ -63,17 +70,23 @@ export async function GET() {
 // POST /api/guru/kelas - Create new kelas
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
 
     // Parse request body
     const body = await request.json()
@@ -93,7 +106,7 @@ export async function POST(request: Request) {
       .from('kelas')
       .select('id')
       .eq('nama_kelas', namaKelas)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (existingKelas) {
@@ -108,7 +121,7 @@ export async function POST(request: Request) {
       .from('kelas')
       .insert({
         nama_kelas: namaKelas,
-        created_by: user.id
+        created_by: session.user.id
       })
       .select('id, nama_kelas, created_at')
       .single()

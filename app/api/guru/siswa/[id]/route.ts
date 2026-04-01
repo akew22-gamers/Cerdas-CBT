@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 interface RouteParams {
@@ -8,17 +9,23 @@ interface RouteParams {
 // GET - Get single siswa detail with kelas
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-    const { id } = await params
-    
-    // Get current user (guru)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const session = await getSession()
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
+    const { id } = await params
 
     const { data: siswa, error } = await supabase
       .from('siswa')
@@ -30,7 +37,7 @@ export async function GET(request: Request, { params }: RouteParams) {
         )
       `)
       .eq('id', id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (error || !siswa) {
@@ -59,17 +66,23 @@ export async function GET(request: Request, { params }: RouteParams) {
 // PUT - Update siswa data
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-    const { id } = await params
-    
-    // Get current user (guru)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const session = await getSession()
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
+    const { id } = await params
 
     const body = await request.json()
     const { nama, kelas_id } = body
@@ -87,7 +100,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       .from('siswa')
       .select('id, nisn')
       .eq('id', id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (!existingSiswa) {
@@ -123,7 +136,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     // Log audit
     await supabase.from('audit_log').insert({
-      user_id: user.id,
+      user_id: session.user.id,
       role: 'guru',
       action: 'update',
       entity_type: 'siswa',
@@ -149,24 +162,30 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-    const { id } = await params
-    
-    // Get current user (guru)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const session = await getSession()
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
         { status: 401 }
       )
     }
 
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
+    const { id } = await params
+
     // Check if siswa exists and belongs to this guru
     const { data: existingSiswa } = await supabase
       .from('siswa')
       .select('id, nisn, nama')
       .eq('id', id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (!existingSiswa) {
@@ -191,7 +210,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     // Log audit
     await supabase.from('audit_log').insert({
-      user_id: user.id,
+      user_id: session.user.id,
       role: 'guru',
       action: 'delete',
       entity_type: 'siswa',

@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 // POST /api/guru/ujian/[id]/duplicate - Duplicate ujian with all soal
@@ -7,16 +8,23 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient()
+    const session = await getSession()
 
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
 
     const { id } = await params
 
@@ -25,7 +33,7 @@ export async function POST(
       .from('ujian')
       .select('id, judul, durasi, jumlah_opsi, show_result')
       .eq('id', id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (fetchError || !originalUjian) {
@@ -58,7 +66,7 @@ export async function POST(
         durasi: originalUjian.durasi,
         jumlah_opsi: originalUjian.jumlah_opsi,
         show_result: originalUjian.show_result,
-        created_by: user.id
+        created_by: session.user.id
       })
       .select('id, kode_ujian, judul, status')
       .single()

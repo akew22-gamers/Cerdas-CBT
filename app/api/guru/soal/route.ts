@@ -1,20 +1,27 @@
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 // GET /api/guru/soal - List soal with ujian_id filter
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient()
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
 
     // Parse query params
     const { searchParams } = new URL(request.url)
@@ -32,7 +39,7 @@ export async function GET(request: Request) {
       .from('ujian')
       .select('id, status')
       .eq('id', ujian_id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (!ujian) {
@@ -77,17 +84,23 @@ export async function GET(request: Request) {
 // POST /api/guru/soal - Create new soal
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
 
     // Parse request body
     const body = await request.json()
@@ -106,7 +119,7 @@ export async function POST(request: Request) {
       .from('ujian')
       .select('id, status')
       .eq('id', ujian_id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (!ujian) {
@@ -156,7 +169,7 @@ export async function POST(request: Request) {
 
     // Log audit
     await supabase.from('audit_log').insert({
-      user_id: user.id,
+      user_id: session.user.id,
       role: 'guru',
       action: 'create',
       entity_type: 'soal',

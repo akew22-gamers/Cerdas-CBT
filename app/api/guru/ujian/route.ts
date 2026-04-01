@@ -1,20 +1,27 @@
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 // GET /api/guru/ujian - List all ujian owned by current guru
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient()
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
 
     // Get query params
     const { searchParams } = new URL(request.url)
@@ -35,7 +42,7 @@ export async function GET(request: Request) {
         ujian_kelas!inner(kelas_id, kelas:kelas(nama_kelas)),
         soal_count:soal(count)
       `)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
 
     // Filter by status if provided
     if (status && (status === 'aktif' || status === 'nonaktif')) {
@@ -98,17 +105,23 @@ export async function GET(request: Request) {
 // POST /api/guru/ujian - Create new ujian
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
 
     // Parse request body
     const body = await request.json()
@@ -145,7 +158,7 @@ export async function POST(request: Request) {
         durasi,
         jumlah_opsi,
         show_result,
-        created_by: user.id
+        created_by: session.user.id
       })
       .select('id, kode_ujian, judul, durasi, jumlah_opsi, status, show_result, created_at')
       .single()

@@ -1,26 +1,33 @@
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 // GET /api/guru/dashboard - Dashboard stats for guru
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
 
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
+
     // Get total kelas count
     const { data: kelasData, error: kelasError } = await supabase
       .from('kelas')
       .select('id')
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
 
     if (kelasError) throw kelasError
 
@@ -28,7 +35,7 @@ export async function GET() {
     const { data: siswaData, error: siswaError } = await supabase
       .from('siswa')
       .select('id')
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
 
     if (siswaError) throw siswaError
 
@@ -36,7 +43,7 @@ export async function GET() {
     const { data: ujianData, error: ujianError } = await supabase
       .from('ujian')
       .select('id, status')
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
 
     if (ujianError) throw ujianError
 

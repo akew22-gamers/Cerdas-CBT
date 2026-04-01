@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 interface RouteParams {
@@ -8,18 +9,24 @@ interface RouteParams {
 // GET /api/guru/kelas/[id] - Get single kelas detail
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-    const { id } = await params
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
+    const { id } = await params
 
     // Get kelas detail with siswa count
     const { data: kelas, error } = await supabase
@@ -32,7 +39,7 @@ export async function GET(request: Request, { params }: RouteParams) {
         siswa_count:siswa(count)
       `)
       .eq('id', id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (error || !kelas) {
@@ -65,18 +72,24 @@ export async function GET(request: Request, { params }: RouteParams) {
 // PUT /api/guru/kelas/[id] - Update kelas
 export async function PUT(_request: Request, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-    const { id } = await params
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
+
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
+    const { id } = await params
 
     // Parse request body
     const body = await _request.json()
@@ -96,7 +109,7 @@ export async function PUT(_request: Request, { params }: RouteParams) {
       .from('kelas')
       .select('id')
       .eq('id', id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (!existingKelas) {
@@ -111,7 +124,7 @@ export async function PUT(_request: Request, { params }: RouteParams) {
       .from('kelas')
       .select('id')
       .eq('nama_kelas', namaKelas)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .neq('id', id)
       .single()
 
@@ -128,7 +141,7 @@ export async function PUT(_request: Request, { params }: RouteParams) {
         nama_kelas: namaKelas
       })
       .eq('id', id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .select('id, nama_kelas, updated_at')
       .single()
 
@@ -161,25 +174,31 @@ export async function PUT(_request: Request, { params }: RouteParams) {
 // DELETE /api/guru/kelas/[id] - Delete kelas (only if no siswa)
 export async function DELETE(_request: Request, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-    const { id } = await params
+    const session = await getSession()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
         { status: 401 }
       )
     }
 
+    if (session.user.role !== 'guru') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Akses ditolak' } },
+        { status: 403 }
+      )
+    }
+
+    const supabase = createAdminClient()
+    const { id } = await params
+
     // Check if kelas exists and belongs to user
     const { data: kelas } = await supabase
       .from('kelas')
       .select('id, nama_kelas')
       .eq('id', id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
       .single()
 
     if (!kelas) {
@@ -208,7 +227,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
       .from('kelas')
       .delete()
       .eq('id', id)
-      .eq('created_by', user.id)
+      .eq('created_by', session.user.id)
 
     if (error) {
       console.error('Error deleting kelas:', error)
