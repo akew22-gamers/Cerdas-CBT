@@ -119,6 +119,7 @@ export default async function SiswaListPage({
 
         <SiswaTable
           siswaList={siswaList || []}
+          kelasList={kelasList || []}
         />
       </div>
     </DashboardLayout>

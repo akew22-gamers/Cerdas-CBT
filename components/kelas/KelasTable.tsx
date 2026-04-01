@@ -20,9 +20,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Pencil, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { EditKelasDialog } from "./EditKelasDialog"
 
 interface Kelas {
   id: string
@@ -101,16 +102,8 @@ export function KelasTable({ data, onDelete }: KelasTableProps) {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push(`/guru/kelas/${kelas.id}/edit`)}
-                      className="gap-1"
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Edit
-                    </Button>
-<AlertDialog>
+                    <EditKelasDialog kelas={kelas} onUpdated={onDelete} />
+                    <AlertDialog>
                       <AlertDialogTrigger
                         render={
                           <Button variant="destructive" size="sm" className="gap-1">
@@ -169,15 +162,7 @@ export function KelasTable({ data, onDelete }: KelasTableProps) {
               </span>
             </div>
             <div className="flex gap-2 pt-3 border-t border-gray-100">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push(`/guru/kelas/${kelas.id}/edit`)}
-                className="flex-1 gap-1"
-              >
-                <Pencil className="h-4 w-4" />
-                Edit
-              </Button>
+              <EditKelasDialog kelas={kelas} onUpdated={onDelete} />
               <AlertDialog>
                 <AlertDialogTrigger>
                   <Button variant="destructive" size="sm" className="flex-1 gap-1">

@@ -23,6 +23,8 @@ import {
 import { Pencil, Trash2, Copy, ToggleRight, ToggleLeft, Users } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { EditUjianDialog } from "./EditUjianDialog"
+import { DetailUjianDialog } from "./DetailUjianDialog"
 
 interface Kelas {
   id: string
@@ -190,26 +192,8 @@ export function UjianTable({ data, onDelete, onToggle }: UjianTableProps) {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push(`/guru/ujian/${ujian.id}`)}
-                      className="gap-1"
-                      title="Lihat Detail"
-                    >
-                      <Users className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push(`/guru/ujian/${ujian.id}/edit`)}
-                      className="gap-1"
-                      disabled={ujian.status === "aktif"}
-                      title={ujian.status === "aktif" ? "Nonaktifkan ujian terlebih dahulu untuk edit" : "Edit"}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Edit
-                    </Button>
+                    <DetailUjianDialog ujian={ujian} />
+                    <EditUjianDialog ujian={ujian} onUpdated={onDelete || onToggle} />
                     <Button
                       variant="outline"
                       size="sm"
@@ -314,25 +298,8 @@ export function UjianTable({ data, onDelete, onToggle }: UjianTableProps) {
               </span>
             </div>
             <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push(`/guru/ujian/${ujian.id}`)}
-                className="flex-1 gap-1 min-w-[45%]"
-              >
-                <Users className="h-4 w-4" />
-                Detail
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push(`/guru/ujian/${ujian.id}/edit`)}
-                className="flex-1 gap-1 min-w-[45%]"
-                disabled={ujian.status === "aktif"}
-              >
-                <Pencil className="h-4 w-4" />
-                Edit
-              </Button>
+              <DetailUjianDialog ujian={ujian} />
+              <EditUjianDialog ujian={ujian} onUpdated={onDelete || onToggle} />
               <Button
                 variant="outline"
                 size="sm"

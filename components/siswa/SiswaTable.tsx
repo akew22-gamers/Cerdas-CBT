@@ -22,13 +22,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Pencil, Trash2, GraduationCap, School } from "lucide-react"
+import { Trash2, GraduationCap, School } from "lucide-react"
 import { ResetPasswordDialog } from "./ResetPasswordDialog"
+import { EditSiswaDialog } from "./EditSiswaDialog"
+
+interface Kelas {
+  id: string
+  nama_kelas: string
+}
 
 interface Siswa {
   id: string
   nisn: string
   nama: string
+  kelas_id?: string | null
   kelas: {
     id: string
     nama_kelas: string
@@ -38,17 +45,14 @@ interface Siswa {
 interface SiswaTableProps {
   siswaList: Siswa[]
   onRefresh?: () => void
+  kelasList?: Kelas[]
 }
 
-export function SiswaTable({ siswaList, onRefresh }: SiswaTableProps) {
+export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableProps) {
   const router = useRouter()
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [selectedSiswa, setSelectedSiswa] = React.useState<Siswa | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
-
-  const handleEdit = (siswa: Siswa) => {
-    router.push(`/guru/siswa/${siswa.id}/edit`)
-  }
 
   const handleDeleteClick = (siswa: Siswa) => {
     setSelectedSiswa(siswa)
@@ -137,15 +141,11 @@ export function SiswaTable({ siswaList, onRefresh }: SiswaTableProps) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(siswa)}
-                        title="Edit"
-                        className="hover:bg-blue-50 hover:text-blue-600"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <EditSiswaDialog
+                        siswa={siswa}
+                        kelasList={kelasList || []}
+                        onUpdated={onRefresh}
+                      />
                       <ResetPasswordDialog
                         siswaId={siswa.id}
                         siswaNama={siswa.nama}
