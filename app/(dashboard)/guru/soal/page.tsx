@@ -6,7 +6,7 @@ import { SoalTable } from "@/components/soal/SoalTable"
 import { UjianFilter } from "@/components/soal/UjianFilter"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Upload } from "lucide-react"
+import { Upload, FileQuestion, Plus, AlertCircle } from "lucide-react"
 
 interface Soal {
   id: string
@@ -98,16 +98,19 @@ export default async function SoalListPage({ searchParams }: { searchParams: Pro
     <DashboardLayout user={user}>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Manajemen Soal</h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Kelola soal untuk ujian Anda
-            </p>
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg shadow-amber-500/25">
+              <FileQuestion className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Manajemen Soal</h1>
+              <p className="text-slate-500 mt-0.5">Kelola soal untuk ujian Anda</p>
+            </div>
           </div>
           <div className="flex gap-2">
             {selectedUjianId && (
               <Link href={`/guru/soal/import?ujian_id=${selectedUjianId}`}>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 hover:bg-slate-50">
                   <Upload className="h-4 w-4" />
                   Import Excel
                 </Button>
@@ -116,37 +119,48 @@ export default async function SoalListPage({ searchParams }: { searchParams: Pro
             <Link
               href={selectedUjianId ? `/guru/soal/create?ujian_id=${selectedUjianId}` : "/guru/soal/create"}
             >
-              <Button className="gap-2">
+              <Button className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
+                <Plus className="h-4 w-4" />
                 Soal Baru
               </Button>
             </Link>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm">
           <UjianFilter ujianList={ujian} selectedUjianId={selectedUjianId} />
         </div>
 
         {!selectedUjianId ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm text-center">
-            <p className="text-gray-500 text-sm">Pilih ujian terlebih dahulu untuk melihat soal</p>
+          <div className="bg-white rounded-xl border border-slate-200/80 p-12 shadow-sm text-center">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileQuestion className="w-8 h-8 text-slate-400" />
+            </div>
+            <p className="text-slate-500 font-medium">Pilih ujian terlebih dahulu</p>
+            <p className="text-sm text-slate-400 mt-1">Silakan pilih ujian dari dropdown di atas</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="p-4 border-b border-gray-200">
+          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-slate-200/80 bg-slate-50/50">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-slate-900 text-lg">
                     {ujian.find(u => u.id === selectedUjianId)?.judul}
                   </h3>
-                  <p className="text-sm text-gray-500">
-                    {soal.length} soal • Status: {ujianStatus === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                  <p className="text-sm text-slate-500 mt-0.5">
+                    {soal.length} soal • Status: 
+                    <span className={ujianStatus === 'aktif' ? 'text-emerald-600 font-medium ml-1' : 'text-slate-600 ml-1'}>
+                      {ujianStatus === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                    </span>
                   </p>
                 </div>
                 {ujianStatus === 'aktif' && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    Edit & hapus dinonaktifkan saat ujian aktif
-                  </span>
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-200">
+                    <AlertCircle className="w-4 h-4 text-amber-600" />
+                    <span className="text-xs font-medium text-amber-700">
+                      Edit & hapus dinonaktifkan
+                    </span>
+                  </div>
                 )}
               </div>
             </div>

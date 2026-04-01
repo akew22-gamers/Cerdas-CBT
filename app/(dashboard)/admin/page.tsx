@@ -4,7 +4,7 @@ import * as React from "react"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
 import { StatsCard } from "@/components/admin/StatsCard"
 import { PageHeader } from "@/components/layout/PageHeader"
-import { Users, ClipboardList, FileCheck, BookOpen, UserPlus, Search, Settings } from "lucide-react"
+import { Users, ClipboardList, FileCheck, BookOpen, UserPlus, Search, Settings, Sparkles, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout user={user}>
-      <div className="space-y-6">
+      <div className="space-y-8">
         <PageHeader
           title="Dashboard Super Admin"
           description="Kelola users, monitoring aktivitas, dan pengaturan sistem"
@@ -107,56 +107,73 @@ export default function AdminDashboard() {
             icon={<Users className="w-5 h-5" />}
             label="Total Guru"
             value={loading ? "-" : stats?.total_guru ?? 0}
+            trend={{ value: 12, isPositive: true }}
+            gradient="from-violet-500 to-purple-600"
           />
           <StatsCard
             icon={<ClipboardList className="w-5 h-5" />}
             label="Total Siswa"
             value={loading ? "-" : stats?.total_siswa ?? 0}
+            trend={{ value: 8, isPositive: true }}
+            gradient="from-blue-500 to-indigo-600"
           />
           <StatsCard
             icon={<FileCheck className="w-5 h-5" />}
             label="Total Ujian"
             value={loading ? "-" : stats?.total_ujian ?? 0}
+            trend={{ value: 5, isPositive: true }}
+            gradient="from-emerald-500 to-teal-600"
           />
           <StatsCard
             icon={<BookOpen className="w-5 h-5" />}
             label="Ujian Aktif"
             value={loading ? "-" : stats?.ujian_aktif ?? 0}
+            highlight
+            gradient="from-amber-500 to-orange-600"
           />
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-900">
-              Quick Actions
-            </CardTitle>
+        <Card className="border-slate-200/80 shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-violet-500" />
+              <CardTitle className="text-lg font-semibold text-slate-900">
+                Quick Actions
+              </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <Link href="/admin/guru/create">
-                <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                  <UserPlus className="w-4 h-4" />
+                <Button variant="outline" className="w-full justify-start gap-3 h-auto py-4 hover:bg-violet-50 hover:border-violet-200 group transition-all">
+                  <div className="p-2 bg-violet-100 rounded-lg group-hover:bg-violet-200 transition-colors">
+                    <UserPlus className="w-4 h-4 text-violet-600" />
+                  </div>
                   <div className="text-left">
-                    <p className="font-medium">Create Guru</p>
-                    <p className="text-xs text-gray-500">Tambah guru baru</p>
+                    <p className="font-semibold text-slate-900">Create Guru</p>
+                    <p className="text-xs text-slate-500">Tambah guru baru</p>
                   </div>
                 </Button>
               </Link>
               <Link href="/admin/audit">
-                <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                  <Search className="w-4 h-4" />
+                <Button variant="outline" className="w-full justify-start gap-3 h-auto py-4 hover:bg-blue-50 hover:border-blue-200 group transition-all">
+                  <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                    <Search className="w-4 h-4 text-blue-600" />
+                  </div>
                   <div className="text-left">
-                    <p className="font-medium">View Audit Log</p>
-                    <p className="text-xs text-gray-500">Monitoring aktivitas</p>
+                    <p className="font-semibold text-slate-900">View Audit Log</p>
+                    <p className="text-xs text-slate-500">Monitoring aktivitas</p>
                   </div>
                 </Button>
               </Link>
               <Link href="/admin/sekolah">
-                <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                  <Settings className="w-4 h-4" />
+                <Button variant="outline" className="w-full justify-start gap-3 h-auto py-4 hover:bg-emerald-50 hover:border-emerald-200 group transition-all">
+                  <div className="p-2 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors">
+                    <Settings className="w-4 h-4 text-emerald-600" />
+                  </div>
                   <div className="text-left">
-                    <p className="font-medium">School Settings</p>
-                    <p className="text-xs text-gray-500">Identitas sekolah</p>
+                    <p className="font-semibold text-slate-900">School Settings</p>
+                    <p className="text-xs text-slate-500">Identitas sekolah</p>
                   </div>
                 </Button>
               </Link>
@@ -165,71 +182,86 @@ export default function AdminDashboard() {
         </Card>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-900">
+          <Card className="border-slate-200/80 shadow-sm">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+              <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-500" />
                 Guru Terbaru
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {loading ? (
-                <div className="text-center text-gray-500 py-4">Memuat...</div>
+                <div className="text-center text-slate-500 py-8">Memuat...</div>
               ) : stats?.recent_guru && stats.recent_guru.length > 0 ? (
-                <div className="space-y-3">
+                <div className="divide-y divide-slate-100">
                   {stats.recent_guru.map((guru) => (
                     <div
                       key={guru.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                      className="flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors"
                     >
-                      <div>
-                        <p className="font-medium text-gray-900">{guru.nama}</p>
-                        <p className="text-xs text-gray-500">
-                          Ditambahkan {formatDate(guru.created_at)}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
+                          {guru.nama?.substring(0, 2).toUpperCase() || "GU"}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{guru.nama}</p>
+                          <p className="text-xs text-slate-500">
+                            Ditambahkan {formatDate(guru.created_at)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-gray-500 py-4">
+                <div className="text-center text-slate-500 py-8">
                   Belum ada guru terdaftar
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-900">
+          <Card className="border-slate-200/80 shadow-sm">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+              <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-emerald-500" />
                 Aktivitas Terakhir
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {loading ? (
-                <div className="text-center text-gray-500 py-4">Memuat...</div>
+                <div className="text-center text-slate-500 py-8">Memuat...</div>
               ) : stats?.recent_audit_logs && stats.recent_audit_logs.length > 0 ? (
-                <div className="space-y-3">
+                <div className="divide-y divide-slate-100">
                   {stats.recent_audit_logs.map((log) => (
                     <div
                       key={log.id}
-                      className="flex items-start justify-between p-3 bg-gray-50 rounded-md"
+                      className="flex items-start justify-between p-4 hover:bg-slate-50/50 transition-colors"
                     >
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">
-                          {formatAction(log.action)} {log.entity_type || "-"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {log.role === "super_admin" ? "Super Admin" : log.role === "guru" ? "Guru" : "Siswa"}
-                        </p>
+                      <div className="flex items-start gap-3">
+                        <div className={`
+                          h-8 w-8 rounded-lg flex items-center justify-center text-white text-xs font-semibold flex-shrink-0
+                          ${log.role === 'super_admin' ? 'bg-violet-500' : log.role === 'guru' ? 'bg-blue-500' : 'bg-emerald-500'}
+                        `}>
+                          {log.role === 'super_admin' ? 'SA' : log.role === 'guru' ? 'G' : 'S'}
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900 text-sm">
+                            {formatAction(log.action)} {log.entity_type || "-"}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {log.role === "super_admin" ? "Super Admin" : log.role === "guru" ? "Guru" : "Siswa"}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-slate-400">
                         {formatDate(log.created_at)}
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-gray-500 py-4">
+                <div className="text-center text-slate-500 py-8">
                   Belum ada aktivitas
                 </div>
               )}

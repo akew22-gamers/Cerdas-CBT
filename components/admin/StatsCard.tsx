@@ -9,34 +9,41 @@ interface StatsCardProps {
     value: number
     isPositive: boolean
   }
+  highlight?: boolean
+  gradient?: string
   className?: string
 }
 
-export function StatsCard({ icon, label, value, trend, className }: StatsCardProps) {
+export function StatsCard({ icon, label, value, trend, highlight, gradient, className }: StatsCardProps) {
   return (
     <div
       className={cn(
-        "bg-white p-6 rounded-lg border border-gray-200 shadow-sm",
-        "flex flex-col justify-center gap-2",
+        "bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm",
+        "flex flex-col justify-center gap-3",
+        "hover:shadow-md hover:border-slate-300 transition-all duration-200",
+        highlight && "ring-1 ring-amber-200/50",
         className
       )}
     >
       <div className="flex items-center gap-3">
-        <span className="text-blue-500">
+        <div className={cn(
+          "p-2 rounded-lg",
+          gradient ? `bg-gradient-to-br ${gradient} text-white shadow-lg` : "bg-slate-100 text-slate-600"
+        )}>
           {icon}
-        </span>
-        <span className="text-sm font-medium text-gray-500">
+        </div>
+        <span className="text-sm font-medium text-slate-500">
           {label}
         </span>
       </div>
       <div className="flex items-end justify-between">
-        <span className="text-2xl font-bold text-gray-900">
+        <span className="text-3xl font-bold text-slate-900">
           {value}
         </span>
         {trend && (
           <span className={cn(
-            "text-xs font-medium",
-            trend.isPositive ? "text-green-600" : "text-red-600"
+            "text-xs font-semibold px-2 py-1 rounded-full",
+            trend.isPositive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
           )}>
             {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
           </span>

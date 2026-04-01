@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, User, Calendar } from "lucide-react"
 import { ResetPasswordDialog } from "./ResetPasswordDialog"
 
 interface Guru {
@@ -104,38 +104,54 @@ export function GuruTable({ guruList, onRefresh }: GuruTableProps) {
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="rounded-xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-16">No</TableHead>
-              <TableHead>Username</TableHead>
-              <TableHead>Nama</TableHead>
-              <TableHead>Dibuat</TableHead>
-              <TableHead className="w-48">Aksi</TableHead>
+            <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+              <TableHead className="w-16 text-slate-600 font-semibold">No</TableHead>
+              <TableHead className="text-slate-600 font-semibold">Username</TableHead>
+              <TableHead className="text-slate-600 font-semibold">Nama</TableHead>
+              <TableHead className="text-slate-600 font-semibold">Dibuat</TableHead>
+              <TableHead className="w-48 text-slate-600 font-semibold">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {guruList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  Belum ada data guru
+                <TableCell colSpan={5} className="text-center py-12 text-slate-400">
+                  <div className="flex flex-col items-center gap-2">
+                    <User className="w-8 h-8 text-slate-300" />
+                    <p>Belum ada data guru</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
               guruList.map((guru, index) => (
-                <TableRow key={guru.id}>
-                  <TableCell className="font-medium">{index + 1}</TableCell>
-                  <TableCell>{guru.username}</TableCell>
-                  <TableCell>{guru.nama}</TableCell>
-                  <TableCell>{formatDate(guru.created_at)}</TableCell>
-                  <TableCell>
+                <TableRow key={guru.id} className="hover:bg-slate-50/50 transition-colors">
+                  <TableCell className="font-medium text-slate-600">{index + 1}</TableCell>
+                  <TableCell className="text-slate-900 font-medium">{guru.username}</TableCell>
+                  <TableCell className="text-slate-900">
                     <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
+                        {guru.nama?.substring(0, 2).toUpperCase() || "GU"}
+                      </div>
+                      {guru.nama}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {formatDate(guru.created_at)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(guru)}
                         title="Edit"
+                        className="hover:bg-blue-50 hover:text-blue-600"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -149,8 +165,9 @@ export function GuruTable({ guruList, onRefresh }: GuruTableProps) {
                         size="icon"
                         onClick={() => handleDeleteClick(guru)}
                         title="Hapus"
+                        className="hover:bg-red-50 hover:text-red-600"
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -162,20 +179,20 @@ export function GuruTable({ guruList, onRefresh }: GuruTableProps) {
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-slate-200">
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Guru</AlertDialogTitle>
-            <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus guru {selectedGuru?.nama}?
+            <AlertDialogTitle className="text-slate-900">Hapus Guru</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500">
+              Apakah Anda yakin ingin menghapus guru <span className="font-semibold text-slate-700">{selectedGuru?.nama}</span>?
               Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting} className="border-slate-200">Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isDeleting}
-              className="bg-destructive hover:bg-destructive/90"
+              className="bg-red-600 hover:bg-red-700"
             >
               {isDeleting ? "Menghapus..." : "Hapus"}
             </AlertDialogAction>

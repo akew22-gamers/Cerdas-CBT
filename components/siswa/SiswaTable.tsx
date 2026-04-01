@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, GraduationCap, School } from "lucide-react"
 import { ResetPasswordDialog } from "./ResetPasswordDialog"
 
 interface Siswa {
@@ -89,40 +89,60 @@ export function SiswaTable({ siswaList, onRefresh }: SiswaTableProps) {
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="rounded-xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-16">No</TableHead>
-              <TableHead>NISN</TableHead>
-              <TableHead>Nama</TableHead>
-              <TableHead>Kelas</TableHead>
-              <TableHead className="w-48">Aksi</TableHead>
+            <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+              <TableHead className="w-16 text-slate-600 font-semibold">No</TableHead>
+              <TableHead className="text-slate-600 font-semibold">NISN</TableHead>
+              <TableHead className="text-slate-600 font-semibold">Nama</TableHead>
+              <TableHead className="text-slate-600 font-semibold">Kelas</TableHead>
+              <TableHead className="w-48 text-slate-600 font-semibold">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {siswaList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  Belum ada data siswa
+                <TableCell colSpan={5} className="text-center py-12 text-slate-400">
+                  <div className="flex flex-col items-center gap-2">
+                    <GraduationCap className="w-8 h-8 text-slate-300" />
+                    <p>Belum ada data siswa</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
               siswaList.map((siswa, index) => (
-                <TableRow key={siswa.id}>
-                  <TableCell className="font-medium">{index + 1}</TableCell>
-                  <TableCell>{siswa.nisn}</TableCell>
-                  <TableCell>{siswa.nama}</TableCell>
-                  <TableCell>
-                    {siswa.kelas?.nama_kelas || "-"}
+                <TableRow key={siswa.id} className="hover:bg-slate-50/50 transition-colors">
+                  <TableCell className="font-medium text-slate-600">{index + 1}</TableCell>
+                  <TableCell className="text-slate-900 font-medium">{siswa.nisn}</TableCell>
+                  <TableCell className="text-slate-900">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-semibold">
+                        {siswa.nama?.substring(0, 2).toUpperCase() || "SW"}
+                      </div>
+                      {siswa.nama}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    {siswa.kelas ? (
+                      <div className="flex items-center gap-1.5">
+                        <School className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="px-2 py-0.5 bg-slate-100 rounded-md text-xs font-medium text-slate-700">
+                          {siswa.kelas.nama_kelas}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 text-sm">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(siswa)}
                         title="Edit"
+                        className="hover:bg-blue-50 hover:text-blue-600"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -136,8 +156,9 @@ export function SiswaTable({ siswaList, onRefresh }: SiswaTableProps) {
                         size="icon"
                         onClick={() => handleDeleteClick(siswa)}
                         title="Hapus"
+                        className="hover:bg-red-50 hover:text-red-600"
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -149,20 +170,20 @@ export function SiswaTable({ siswaList, onRefresh }: SiswaTableProps) {
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-slate-200">
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Siswa</AlertDialogTitle>
-            <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus siswa {selectedSiswa?.nama}?
+            <AlertDialogTitle className="text-slate-900">Hapus Siswa</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500">
+              Apakah Anda yakin ingin menghapus siswa <span className="font-semibold text-slate-700">{selectedSiswa?.nama}</span>?
               Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting} className="border-slate-200">Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isDeleting}
-              className="bg-destructive hover:bg-destructive/90"
+              className="bg-red-600 hover:bg-red-700"
             >
               {isDeleting ? "Menghapus..." : "Hapus"}
             </AlertDialogAction>

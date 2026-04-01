@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Upload } from 'lucide-react'
+import { Plus, Upload, GraduationCap, Users, Filter } from 'lucide-react'
 import Link from 'next/link'
 
 interface Kelas {
@@ -80,17 +80,22 @@ export default async function SiswaListPage({
     >
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-indigo-900">Manajemen Siswa</h1>
-            <p className="text-gray-600 mt-1">Kelola data siswa Anda</p>
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Manajemen Siswa</h1>
+              <p className="text-slate-500 mt-0.5">Kelola data siswa dan kelas Anda</p>
+            </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 hover:bg-slate-50">
               <Upload className="h-4 w-4" />
               Import Excel
             </Button>
             <Link href="/guru/siswa/create">
-              <Button className="gap-2">
+              <Button className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
                 <Plus className="h-4 w-4" />
                 Tambah Siswa
               </Button>
@@ -98,10 +103,12 @@ export default async function SiswaListPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200/80 shadow-sm">
+          <Filter className="w-4 h-4 text-slate-400" />
+          <span className="text-sm font-medium text-slate-600">Filter:</span>
           <Select defaultValue={kelas_id || ""}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filter kelas" />
+            <SelectTrigger className="w-[220px] bg-slate-50 border-slate-200">
+              <SelectValue placeholder="Pilih kelas" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Semua Kelas</SelectItem>

@@ -2,17 +2,50 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
-import { Eye, EyeOff, GraduationCap, School, Shield, User } from "lucide-react"
+import { Eye, EyeOff, GraduationCap, School, Shield, User, ChevronRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 type UserRole = "super_admin" | "guru" | "siswa"
 
 interface LoginFormProps {
   schoolName: string
+}
+
+const roleConfig: Record<UserRole, {
+  label: string
+  icon: typeof Shield
+  title: string
+  description: string
+  gradient: string
+  accent: string
+}> = {
+  super_admin: {
+    label: "Super Admin",
+    icon: Shield,
+    title: "Super Admin",
+    description: "Akses penuh sistem dan manajemen",
+    gradient: "from-violet-500 to-purple-600",
+    accent: "violet",
+  },
+  guru: {
+    label: "Guru",
+    icon: School,
+    title: "Guru",
+    description: "Kelola kelas, siswa, dan ujian",
+    gradient: "from-blue-500 to-indigo-600",
+    accent: "blue",
+  },
+  siswa: {
+    label: "Siswa",
+    icon: GraduationCap,
+    title: "Siswa",
+    description: "Ikuti ujian dan lihat hasil",
+    gradient: "from-emerald-500 to-teal-600",
+    accent: "emerald",
+  },
 }
 
 export function LoginForm({ schoolName }: LoginFormProps) {
@@ -38,7 +71,7 @@ export function LoginForm({ schoolName }: LoginFormProps) {
     return true
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!validateForm()) return
@@ -82,8 +115,8 @@ export function LoginForm({ schoolName }: LoginFormProps) {
     }
   }
 
-  const handleRoleChange = (value: string) => {
-    setRole(value as UserRole)
+  const handleRoleChange = (newRole: UserRole) => {
+    setRole(newRole)
     setUsername("")
     setPassword("")
   }
@@ -95,7 +128,7 @@ export function LoginForm({ schoolName }: LoginFormProps) {
       case "guru":
         return "Username Guru"
       case "super_admin":
-        return "Username Super-admin"
+        return "Username Super Admin"
       default:
         return "Username"
     }
@@ -108,96 +141,118 @@ export function LoginForm({ schoolName }: LoginFormProps) {
       case "guru":
         return "Masukkan username guru"
       case "super_admin":
-        return "Masukkan username super-admin"
+        return "Masukkan username super admin"
       default:
         return "Masukkan username"
     }
   }
 
+  const currentRole = roleConfig[role]
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Tabs value={role} onValueChange={handleRoleChange} className="w-full">
-        <TabsList variant="line" className="grid w-full grid-cols-3 h-11">
-          <TabsTrigger value="super_admin" className="flex items-center gap-2 text-xs md:text-sm">
-            <Shield className="w-4 h-4 hidden sm:inline" />
-            <span>Super-admin</span>
-          </TabsTrigger>
-          <TabsTrigger value="guru" className="flex items-center gap-2 text-xs md:text-sm">
-            <School className="w-4 h-4 hidden sm:inline" />
-            <span>Guru</span>
-          </TabsTrigger>
-          <TabsTrigger value="siswa" className="flex items-center gap-2 text-xs md:text-sm">
-            <GraduationCap className="w-4 h-4 hidden sm:inline" />
-            <span>Siswa</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="super_admin" className="mt-6">
-          <RoleDescription
-            icon={<Shield className="w-5 h-5" />}
-            title="Login sebagai Super-admin"
-            description="Akses penuh untuk mengelola sistem, guru, dan data sekolah."
-          />
-        </TabsContent>
-
-        <TabsContent value="guru" className="mt-6">
-          <RoleDescription
-            icon={<School className="w-5 h-5" />}
-            title="Login sebagai Guru"
-            description="Kelola kelas, siswa, soal, dan pantau hasil ujian."
-          />
-        </TabsContent>
-
-        <TabsContent value="siswa" className="mt-6">
-          <RoleDescription
-            icon={<GraduationCap className="w-5 h-5" />}
-            title="Login sebagai Siswa"
-            description="Ikuti ujian dengan memasukkan kode ujian yang diberikan guru."
-          />
-        </TabsContent>
-      </Tabs>
-
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="username" className="flex items-center gap-2">
-            <User className="w-4 h-4 text-gray-400" />
-            {getUsernameLabel()}
+        <div>
+          <Label className="text-sm font-medium text-slate-700 mb-3 block">
+            Pilih Peran
           </Label>
-          <Input
-            id="username"
-            type="text"
-            placeholder={getUsernamePlaceholder()}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={isLoading}
-            className="h-10"
-          />
+          <div className="grid grid-cols-3 gap-2">
+            {(Object.keys(roleConfig) as UserRole[]).map((roleKey) => {
+              const config = roleConfig[roleKey]
+              const isActive = role === roleKey
+              const Icon = config.icon
+              
+              return (
+                <button
+                  key={roleKey}
+                  type="button"
+                  onClick={() => handleRoleChange(roleKey)}
+                  className={`
+                    relative group flex flex-col items-center justify-center p-3 rounded-xl
+                    transition-all duration-200 ease-out
+                    ${isActive 
+                      ? `bg-gradient-to-br ${config.gradient} text-white shadow-lg shadow-${config.accent}-500/25 scale-[1.02]` 
+                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 hover:border-slate-300'
+                    }
+                  `}
+                >
+                  <Icon className={`w-5 h-5 mb-2 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-600'}`} />
+                  <span className="text-xs font-semibold leading-tight">{config.label}</span>
+                  {isActive && (
+                    <div className="absolute inset-0 rounded-xl ring-2 ring-white/50" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
+        <div className={`
+          p-4 rounded-xl border transition-all duration-300
+          ${role === 'super_admin' ? 'bg-violet-50/50 border-violet-200' : ''}
+          ${role === 'guru' ? 'bg-blue-50/50 border-blue-200' : ''}
+          ${role === 'siswa' ? 'bg-emerald-50/50 border-emerald-200' : ''}
+        `}>
+          <div className="flex items-start gap-3">
+            <div className={`
+              p-2 rounded-lg flex-shrink-0
+              ${role === 'super_admin' ? 'bg-violet-100 text-violet-600' : ''}
+              ${role === 'guru' ? 'bg-blue-100 text-blue-600' : ''}
+              ${role === 'siswa' ? 'bg-emerald-100 text-emerald-600' : ''}
+            `}>
+              <currentRole.icon className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-900 text-sm">{currentRole.title}</h3>
+              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{currentRole.description}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 pt-2">
+          <div className="space-y-2">
+            <Label htmlFor="username" className="text-sm font-medium text-slate-700 flex items-center gap-2">
+              <User className="w-3.5 h-3.5 text-slate-400" />
+              {getUsernameLabel()}
+            </Label>
             <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Masukkan password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="username"
+              type="text"
+              placeholder={getUsernamePlaceholder()}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
-              className="h-10 pr-10"
+              className="h-11 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
-              tabIndex={-1}
-            >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </button>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+              Password
+            </Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Masukkan password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                className="h-11 pr-10 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -205,7 +260,7 @@ export function LoginForm({ schoolName }: LoginFormProps) {
       <div className="flex items-center justify-between">
         <a
           href="#"
-          className="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+          className="text-sm text-slate-500 hover:text-blue-600 transition-colors"
           onClick={(e) => {
             e.preventDefault()
             toast.info("Hubungi admin untuk reset password")
@@ -217,7 +272,13 @@ export function LoginForm({ schoolName }: LoginFormProps) {
 
       <Button
         type="submit"
-        className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+        className={`
+          w-full h-11 text-white font-semibold shadow-lg transition-all duration-200
+          hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]
+          ${role === 'super_admin' ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-violet-500/25' : ''}
+          ${role === 'guru' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/25' : ''}
+          ${role === 'siswa' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-500/25' : ''}
+        `}
         disabled={isLoading}
       >
         {isLoading ? (
@@ -245,37 +306,18 @@ export function LoginForm({ schoolName }: LoginFormProps) {
             Memuat...
           </span>
         ) : (
-          "Masuk"
+          <span className="flex items-center gap-2">
+            Masuk
+            <ChevronRight className="w-4 h-4" />
+          </span>
         )}
       </Button>
 
       <div className="text-center pt-2">
-        <p className="text-xs text-gray-500">
-          Masuk ke sistem ujian online {schoolName}
+        <p className="text-xs text-slate-400">
+          Masuk ke sistem ujian online <span className="font-medium text-slate-500">{schoolName}</span>
         </p>
       </div>
     </form>
-  )
-}
-
-interface RoleDescriptionProps {
-  icon: React.ReactNode
-  title: string
-  description: string
-}
-
-function RoleDescription({ icon, title, description }: RoleDescriptionProps) {
-  return (
-    <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-      <div className="flex items-start gap-3">
-        <div className="p-2 bg-blue-100 rounded-lg text-blue-600 flex-shrink-0">
-          {icon}
-        </div>
-        <div>
-          <h3 className="font-medium text-gray-900 text-sm">{title}</h3>
-          <p className="text-xs text-gray-600 mt-1 leading-relaxed">{description}</p>
-        </div>
-      </div>
-    </div>
   )
 }

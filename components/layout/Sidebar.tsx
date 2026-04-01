@@ -14,7 +14,8 @@ import {
   FileText,
   History,
   Menu,
-  X
+  X,
+  ChevronRight
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -76,6 +77,12 @@ const navigationConfig: Record<UserRole, NavSection[]> = {
   ],
 }
 
+const roleColors: Record<UserRole, { gradient: string; accent: string }> = {
+  super_admin: { gradient: "from-violet-500 to-purple-600", accent: "violet" },
+  guru: { gradient: "from-blue-500 to-indigo-600", accent: "blue" },
+  siswa: { gradient: "from-emerald-500 to-teal-600", accent: "emerald" },
+}
+
 interface SidebarProps {
   role: UserRole
   className?: string
@@ -86,6 +93,7 @@ export function Sidebar({ role, className }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
   const navSections = navigationConfig[role]
+  const colors = roleColors[role]
 
   const isActive = (href: string) => {
     if (href === "/admin" || href === "/guru" || href === "/siswa") {
@@ -101,52 +109,58 @@ export function Sidebar({ role, className }: SidebarProps) {
           variant="outline"
           size="icon"
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="bg-white border-gray-200"
+          className="bg-white border-slate-200 shadow-sm hover:bg-slate-50"
         >
           {mobileOpen ? (
-            <X className="h-5 w-5 text-gray-700" />
+            <X className="h-5 w-5 text-slate-700" />
           ) : (
-            <Menu className="h-5 w-5 text-gray-700" />
+            <Menu className="h-5 w-5 text-slate-700" />
           )}
         </Button>
       </div>
 
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          className="lg:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          "w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col",
+          "w-64 bg-white border-r border-slate-200/80 min-h-screen flex flex-col",
           "fixed lg:static inset-y-0 left-0 z-40",
-          "transition-transform duration-200 ease-in-out",
+          "transition-transform duration-300 ease-out",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           className
         )}
       >
-        <div className="flex items-center gap-2 p-4 font-bold text-xl text-gray-900 border-b border-gray-100">
-          <div className="h-8 w-8 flex items-center justify-center">
-            <img
-              src="/images/logo_kemendikdasmen.svg"
-              alt="Logo Kemendikdasmen"
-              className="h-8 w-8"
-            />
+        <div className="flex items-center gap-3 p-5 border-b border-slate-200/80">
+          <div className="relative">
+            <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} rounded-xl blur-md opacity-60`} />
+            <div className="relative h-9 w-9 flex items-center justify-center bg-white rounded-xl shadow-sm border border-slate-100">
+              <img
+                src="/images/logo_kemendikdasmen.svg"
+                alt="Logo"
+                className="h-6 w-6"
+              />
+            </div>
           </div>
-          <span>Cerdas-CBT</span>
+          <div>
+            <h1 className="font-bold text-lg text-slate-900 leading-none">Cerdas-CBT</h1>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">Platform Ujian</p>
+          </div>
         </div>
 
         <nav className="flex-1 py-4 overflow-y-auto">
           {navSections.map((section, sectionIndex) => (
-            <div key={sectionIndex} className="mb-4">
+            <div key={sectionIndex} className="mb-6">
               {section.title && (
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4 mb-2 px-4">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-5">
                   {section.title}
                 </p>
               )}
-              <div className="space-y-1">
+              <div className="space-y-1 px-3">
                 {section.items.map((item) => {
                   const active = isActive(item.href)
                   return (
@@ -155,16 +169,22 @@ export function Sidebar({ role, className }: SidebarProps) {
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
                       className={cn(
-                        "flex items-center gap-3 px-4 py-2 mx-2 rounded-md text-sm font-medium transition-colors",
+                        "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group",
                         active
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-gray-700 hover:bg-gray-50"
+                          ? `bg-gradient-to-r ${colors.gradient} text-white shadow-md shadow-${colors.accent}-500/25`
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       )}
                     >
-                      <span className={cn("w-5 h-5", active ? "text-blue-600" : "text-gray-400")}>
+                      <span className={cn(
+                        "w-5 h-5 transition-colors",
+                        active ? "text-white" : "text-slate-400 group-hover:text-slate-600"
+                      )}>
                         {item.icon}
                       </span>
-                      <span>{item.label}</span>
+                      <span className="flex-1">{item.label}</span>
+                      {active && (
+                        <ChevronRight className="w-4 h-4 opacity-60" />
+                      )}
                     </Link>
                   )
                 })}
@@ -173,10 +193,15 @@ export function Sidebar({ role, className }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
-          <p className="text-xs text-gray-400 text-center">
-            © 2026 Cerdas-CBT
-          </p>
+        <div className="p-4 border-t border-slate-200/80">
+          <div className="bg-slate-50 rounded-xl p-3">
+            <p className="text-[10px] text-slate-400 text-center font-medium">
+              © 2026 Cerdas-CBT
+            </p>
+            <p className="text-[9px] text-slate-400 text-center">
+              EAS Creative Studio
+            </p>
+          </div>
         </div>
       </aside>
     </>
