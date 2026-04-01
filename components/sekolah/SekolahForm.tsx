@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { School, Building2, Phone, Mail, Globe, MapPin, User } from "lucide-react"
 
 interface SekolahFormData {
   nama_sekolah?: string
@@ -80,9 +81,27 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="relative mb-8">
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl blur-xl opacity-20" />
+        <div className="relative flex items-center gap-3">
+          <div className="h-12 w-12 flex items-center justify-center bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-violet-500/30">
+            <School className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-700 bg-clip-text text-transparent">
+              Data Sekolah
+            </h2>
+            <p className="text-sm text-slate-500">Lengkapi informasi identitas sekolah</p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="nama_sekolah">Nama Sekolah</Label>
+          <Label htmlFor="nama_sekolah" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-violet-500" />
+            Nama Sekolah <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="nama_sekolah"
             name="nama_sekolah"
@@ -92,11 +111,15 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
             onChange={handleInputChange}
             required
             disabled={isLoading || readOnly}
+            className="focus:ring-2 focus:ring-violet-500/20 border-slate-200"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="tahun_ajaran">Tahun Ajaran</Label>
+          <Label htmlFor="tahun_ajaran" className="flex items-center gap-2">
+            <User className="h-4 w-4 text-violet-500" />
+            Tahun Ajaran <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="tahun_ajaran"
             name="tahun_ajaran"
@@ -106,11 +129,15 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
             onChange={handleInputChange}
             required
             disabled={isLoading || readOnly}
+            className="focus:ring-2 focus:ring-violet-500/20 border-slate-200"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="npsn">NPSN</Label>
+          <Label htmlFor="npsn" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-violet-500" />
+            NPSN
+          </Label>
           <Input
             id="npsn"
             name="npsn"
@@ -119,11 +146,15 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
             value={formData.npsn}
             onChange={handleInputChange}
             disabled={isLoading || readOnly}
+            className="focus:ring-2 focus:ring-violet-500/20 border-slate-200"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="kepala_sekolah">Kepala Sekolah</Label>
+          <Label htmlFor="kepala_sekolah" className="flex items-center gap-2">
+            <User className="h-4 w-4 text-violet-500" />
+            Kepala Sekolah
+          </Label>
           <Input
             id="kepala_sekolah"
             name="kepala_sekolah"
@@ -132,11 +163,15 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
             value={formData.kepala_sekolah}
             onChange={handleInputChange}
             disabled={isLoading || readOnly}
+            className="focus:ring-2 focus:ring-violet-500/20 border-slate-200"
           />
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="alamat">Alamat</Label>
+          <Label htmlFor="alamat" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-violet-500" />
+            Alamat
+          </Label>
           <Textarea
             id="alamat"
             name="alamat"
@@ -145,11 +180,15 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
             onChange={handleInputChange}
             disabled={isLoading || readOnly}
             rows={3}
+            className="focus:ring-2 focus:ring-violet-500/20 border-slate-200 resize-none"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="telepon">Telepon</Label>
+          <Label htmlFor="telepon" className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-violet-500" />
+            Telepon
+          </Label>
           <Input
             id="telepon"
             name="telepon"
@@ -158,11 +197,15 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
             value={formData.telepon}
             onChange={handleInputChange}
             disabled={isLoading || readOnly}
+            className="focus:ring-2 focus:ring-violet-500/20 border-slate-200"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="flex items-center gap-2">
+            <Mail className="h-4 w-4 text-violet-500" />
+            Email
+          </Label>
           <Input
             id="email"
             name="email"
@@ -171,11 +214,15 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
             value={formData.email}
             onChange={handleInputChange}
             disabled={isLoading || readOnly}
+            className="focus:ring-2 focus:ring-violet-500/20 border-slate-200"
           />
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="website">Website</Label>
+          <Label htmlFor="website" className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-violet-500" />
+            Website
+          </Label>
           <Input
             id="website"
             name="website"
@@ -184,11 +231,15 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
             value={formData.website}
             onChange={handleInputChange}
             disabled={isLoading || readOnly}
+            className="focus:ring-2 focus:ring-violet-500/20 border-slate-200"
           />
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="logo_url">URL Logo</Label>
+          <Label htmlFor="logo_url" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-violet-500" />
+            URL Logo
+          </Label>
           <Input
             id="logo_url"
             name="logo_url"
@@ -197,19 +248,20 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
             value={formData.logo_url}
             onChange={handleInputChange}
             disabled={isLoading || readOnly}
+            className="focus:ring-2 focus:ring-violet-500/20 border-slate-200"
           />
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-slate-500">
             Masukkan URL gambar untuk logo sekolah
           </p>
         </div>
       </div>
 
       {!readOnly && (
-        <div className="flex gap-2">
+        <div className="flex gap-3 pt-2">
           <Button 
             type="submit" 
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/30"
           >
             {isLoading ? "Menyimpan..." : "Simpan Perubahan"}
           </Button>
@@ -218,6 +270,7 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
             variant="outline"
             onClick={() => router.refresh()}
             disabled={isLoading}
+            className="border-slate-200 hover:bg-slate-50"
           >
             Batal
           </Button>
