@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout'
 import { SiswaTable } from '@/components/siswa/SiswaTable'
+import { AddSiswaDialog } from '@/components/siswa/AddSiswaDialog'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -94,12 +95,7 @@ export default async function SiswaListPage({
               <Upload className="h-4 w-4" />
               Import Excel
             </Button>
-            <Link href="/guru/siswa/create">
-              <Button className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
-                <Plus className="h-4 w-4" />
-                Tambah Siswa
-              </Button>
-            </Link>
+            <AddSiswaDialog />
           </div>
         </div>
 

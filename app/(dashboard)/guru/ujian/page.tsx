@@ -3,8 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { redirect } from "next/navigation"
 import { DashboardLayout } from "@/components/layout"
 import { UjianTable } from "@/components/ujian/UjianTable"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { AddUjianDialog } from "@/components/ujian/AddUjianDialog"
 
 interface Kelas {
   id: string
@@ -103,9 +102,7 @@ export default async function UjianListPage() {
               Kelola ujian dan tugaskan ke kelas
             </p>
           </div>
-          <Link href="/guru/ujian/create">
-            <Button>Ujian Baru</Button>
-          </Link>
+          <AddUjianDialog />
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">

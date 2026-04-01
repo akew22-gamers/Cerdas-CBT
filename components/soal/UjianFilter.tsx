@@ -45,7 +45,9 @@ export function UjianFilter({ ujianList, selectedUjianId }: UjianFilterProps) {
         onValueChange={handleUjianChange}
       >
         <SelectTrigger className="w-full sm:w-[400px]">
-          <SelectValue placeholder="Pilih ujian..." />
+          <SelectValue placeholder="Pilih ujian...">
+            {selectedUjianId ? ujianList.find(u => u.id === selectedUjianId)?.judul : ""}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {ujianList.map((u) => (

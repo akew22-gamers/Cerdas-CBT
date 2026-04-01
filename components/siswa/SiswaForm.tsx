@@ -149,7 +149,9 @@ export function SiswaForm({ initialData, kelasList, mode }: SiswaFormProps) {
             disabled={isLoading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Pilih kelas" />
+              <SelectValue placeholder="Pilih kelas">
+                {formData.kelas_id ? kelasList.find(k => k.id === formData.kelas_id)?.nama_kelas : ""}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {kelasList.length > 0 ? (
