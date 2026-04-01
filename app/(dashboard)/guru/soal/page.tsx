@@ -107,23 +107,34 @@ export default async function SoalListPage({ searchParams }: { searchParams: Pro
               <p className="text-slate-500 mt-0.5">Kelola soal untuk ujian Anda</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            {selectedUjianId && (
-              <Link href={`/guru/soal/import?ujian_id=${selectedUjianId}`}>
-                <Button variant="outline" className="gap-2 hover:bg-slate-50">
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <Link href={selectedUjianId ? `/guru/soal/import?ujian_id=${selectedUjianId}` : '#'}>
+                <Button 
+                  variant="outline" 
+                  className="gap-2 hover:bg-slate-50"
+                  disabled={!selectedUjianId}
+                >
                   <Upload className="h-4 w-4" />
                   Import Excel
                 </Button>
               </Link>
+              <Link
+                href={selectedUjianId ? `/guru/soal/create?ujian_id=${selectedUjianId}` : '/guru/soal/create'}
+                className={!selectedUjianId ? 'pointer-events-none opacity-50' : ''}
+              >
+                <Button 
+                  className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
+                  disabled={!selectedUjianId}
+                >
+                  <Plus className="h-4 w-4" />
+                  Soal Baru
+                </Button>
+              </Link>
+            </div>
+            {!selectedUjianId && (
+              <p className="text-xs text-slate-500 ml-2">Pilih ujian terlebih dahulu untuk menambah soal</p>
             )}
-            <Link
-              href={selectedUjianId ? `/guru/soal/create?ujian_id=${selectedUjianId}` : "/guru/soal/create"}
-            >
-              <Button className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
-                <Plus className="h-4 w-4" />
-                Soal Baru
-              </Button>
-            </Link>
           </div>
         </div>
 
