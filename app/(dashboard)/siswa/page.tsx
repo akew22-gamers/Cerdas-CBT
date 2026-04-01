@@ -1,5 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { getSession } from "@/lib/auth/session"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { DashboardLayout } from "@/components/layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UjianCard } from "@/components/siswa/UjianCard"
@@ -28,37 +29,35 @@ interface DashboardData {
   }>
 }
 
-async function getDashboardData(): Promise<{ data: DashboardData; user: { nama: string; role: string } }> {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
+async function getDashboardData(): Promise<{ data: DashboardData; user: { nama: string; username: string; role: string } }> {
+  const session = await getSession()
+  
+  if (!session) {
+    redirect("/login")
+  }
+  
+  if (session.user.role !== "siswa") {
     redirect("/login")
   }
 
-  const { data: siswa } = await supabase
-    .from("siswa")
-    .select("nama")
-    .eq("id", user.id)
-    .single()
+  const supabase = createAdminClient()
 
   const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/siswa/dashboard`, {
     headers: {
-      'Cookie': (await supabase.auth.getSession()).data.session ? `sb-access-token=${(await supabase.auth.getSession()).data.session?.access_token}` : ''
+      'Cookie': `cbt_session_token=${session.token}`
     }
   })
 
   if (!response.ok) {
     return {
       data: {
-        siswa_nama: siswa?.nama || "Siswa",
+        siswa_nama: session.user.nama || "Siswa",
         total_ujian_selesai: 0,
         rata_rata_nilai: 0,
         available_ujian: [],
         recent_hasil: []
       },
-      user: { nama: siswa?.nama || "Siswa", role: "siswa" }
+      user: { nama: session.user.nama || "Siswa", username: session.user.username, role: "siswa" }
     }
   }
 
@@ -66,7 +65,7 @@ async function getDashboardData(): Promise<{ data: DashboardData; user: { nama: 
 
   return {
     data: result.data,
-    user: { nama: siswa?.nama || "Siswa", role: "siswa" }
+    user: { nama: session.user.nama || "Siswa", username: session.user.username, role: "siswa" }
   }
 }
 

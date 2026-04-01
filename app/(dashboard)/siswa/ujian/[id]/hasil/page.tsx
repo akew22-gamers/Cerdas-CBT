@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -25,8 +25,10 @@ interface HasilData {
   }
 }
 
-export default function HasilUjianPage({ params }: { params: Promise<{ id: string }> }) {
+export default function HasilUjianPage() {
   const router = useRouter()
+  const params = useParams()
+  const ujianId = params.id as string
   const [loading, setLoading] = useState(true)
   const [hasil, setHasil] = useState<HasilData | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -34,8 +36,7 @@ export default function HasilUjianPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     async function fetchHasil() {
       try {
-        const { id } = await params
-        const response = await fetch(`/api/siswa/ujian/${id}/hasil`)
+        const response = await fetch(`/api/siswa/ujian/${ujianId}/hasil`)
         const data = await response.json()
 
         if (!data.success) {
@@ -53,7 +54,7 @@ export default function HasilUjianPage({ params }: { params: Promise<{ id: strin
     }
 
     fetchHasil()
-  }, [params])
+  }, [ujianId])
 
   if (loading) {
     return (
