@@ -1,10 +1,19 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
+    const session = await getSession()
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { old_password, new_password } = body
 
@@ -22,21 +31,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: { code: 'UNAUTHORIZED', message: 'Tidak terautentikasi' } },
-        { status: 401 }
-      )
-    }
-
-    const userMetadata = user.user_metadata
-    const role = userMetadata?.role
+    const supabase = createAdminClient()
+    const { user } = session
 
     let tableName = ''
-    switch (role) {
+    switch (user.role) {
       case 'super_admin':
         tableName = 'super_admin'
         break
@@ -53,7 +52,6 @@ export async function POST(request: Request) {
         )
     }
 
-    // Get user from database
     const { data: userData, error } = await supabase
       .from(tableName)
       .select('*')
@@ -67,7 +65,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verify old password
     const isValidPassword = await bcrypt.compare(old_password, userData.password_hash)
 
     if (!isValidPassword) {
@@ -77,10 +74,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Hash new password
     const newPasswordHash = await bcrypt.hash(new_password, 10)
 
-    // Update password
     const { error: updateError } = await supabase
       .from(tableName)
       .update({ password_hash: newPasswordHash, updated_at: new Date().toISOString() })
@@ -93,10 +88,9 @@ export async function POST(request: Request) {
       )
     }
 
-    // Log audit
     await supabase.from('audit_log').insert({
       user_id: user.id,
-      role: role,
+      role: user.role,
       action: 'change_password',
       entity_type: 'user',
       entity_id: user.id,

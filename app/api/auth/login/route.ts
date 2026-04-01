@@ -1,10 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { createSession, SESSION_COOKIE_NAME, SESSION_DURATION_SECONDS } from '@/lib/auth/session'
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json()
     const { username, password, role } = body
 
@@ -16,44 +18,33 @@ export async function POST(request: Request) {
     }
 
     let user = null
-    let tableName = ''
 
-    switch (role) {
-      case 'super_admin':
-        tableName = 'super_admin'
-        const { data: superAdmin } = await supabase
-          .from('super_admin')
-          .select('*')
-          .eq('username', username)
-          .single()
-        user = superAdmin
-        break
-
-      case 'guru':
-        tableName = 'guru'
-        const { data: guru } = await supabase
-          .from('guru')
-          .select('*')
-          .eq('username', username)
-          .single()
-        user = guru
-        break
-
-      case 'siswa':
-        tableName = 'siswa'
-        const { data: siswa } = await supabase
-          .from('siswa')
-          .select('*')
-          .eq('nisn', username)
-          .single()
-        user = siswa
-        break
-
-      default:
-        return NextResponse.json(
-          { success: false, error: { code: 'INVALID_ROLE', message: 'Role tidak valid' } },
-          { status: 400 }
-        )
+    if (role === 'super_admin') {
+      const { data } = await supabase
+        .from('super_admin')
+        .select('*')
+        .eq('username', username)
+        .single()
+      user = data
+    } else if (role === 'guru') {
+      const { data } = await supabase
+        .from('guru')
+        .select('*')
+        .eq('username', username)
+        .single()
+      user = data
+    } else if (role === 'siswa') {
+      const { data } = await supabase
+        .from('siswa')
+        .select('*')
+        .eq('nisn', username)
+        .single()
+      user = data
+    } else {
+      return NextResponse.json(
+        { success: false, error: { code: 'INVALID_ROLE', message: 'Role tidak valid' } },
+        { status: 400 }
+      )
     }
 
     if (!user) {
@@ -72,13 +63,23 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create user object for session
-    const userSession = {
-      id: user.id,
-      username: role === 'siswa' ? user.nisn : user.username,
-      nama: user.nama || 'Super Admin',
-      role: role
-    }
+    // Create session
+    const session = await createSession(
+      user.id,
+      role,
+      role === 'siswa' ? user.nisn : user.username,
+      user.nama || null
+    )
+
+    // Set session cookie
+    const cookieStore =await cookies()
+    cookieStore.set(SESSION_COOKIE_NAME, session.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_DURATION_SECONDS,
+      path: '/'
+    })
 
     // Log audit
     await supabase.from('audit_log').insert({
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        user: userSession
+        user: session.user
       }
     })
 
