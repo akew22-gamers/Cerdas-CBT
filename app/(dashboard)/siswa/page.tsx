@@ -29,7 +29,100 @@ interface DashboardData {
   }>
 }
 
-async function getDashboardData(): Promise<{ data: DashboardData; user: { nama: string; username: string; role: string } }> {
+async function getDashboardData(siswaId: string): Promise<DashboardData> {
+  const supabase = createAdminClient()
+
+  const { data: siswa } = await supabase
+    .from('siswa')
+    .select('id, nama, nisn, kelas_id')
+    .eq('id', siswaId)
+    .single()
+
+  if (!siswa) {
+    return {
+      siswa_nama: "Siswa",
+      total_ujian_selesai: 0,
+      rata_rata_nilai: 0,
+      available_ujian: [],
+      recent_hasil: []
+    }
+  }
+
+  const { data: hasilData } = await supabase
+    .from('hasil_ujian')
+    .select('nilai')
+    .eq('siswa_id', siswaId)
+    .eq('is_submitted', true)
+
+  const totalUjianSelesai = hasilData?.length || 0
+  const rataRataNilai = totalUjianSelesai > 0 && hasilData
+    ? Math.round(hasilData.reduce((sum, h) => sum + Number(h.nilai), 0) / totalUjianSelesai)
+    : 0
+
+  const { data: availableUjian } = await supabase
+    .from('ujian')
+    .select(`
+      id,
+      kode_ujian,
+      judul,
+      durasi,
+      show_result,
+      ujian_kelas!inner(
+        kelas_id
+      )
+    `)
+    .eq('ujian_kelas.kelas_id', siswa.kelas_id)
+    .eq('status', 'aktif')
+    .not('id', 'in', `(
+      select ujian_id from hasil_ujian where siswa_id = '${siswaId}'
+    )`)
+
+  const formattedAvailableUjian = (availableUjian || []).map((u: any) => ({
+    id: u.id,
+    kode_ujian: u.kode_ujian,
+    judul: u.judul,
+    durasi: u.durasi,
+    show_result: u.show_result
+  }))
+
+  const { data: recentHasil } = await supabase
+    .from('hasil_ujian')
+    .select(`
+      id,
+      nilai,
+      waktu_selesai,
+      is_submitted,
+      ujian:ujian_id (
+        id,
+        judul,
+        show_result
+      )
+    `)
+    .eq('siswa_id', siswaId)
+    .eq('is_submitted', true)
+    .order('waktu_selesai', { ascending: false })
+    .limit(5)
+
+  const formattedRecentHasil = (recentHasil || []).map((h: any) => ({
+    id: h.id,
+    ujian_id: h.ujian?.id,
+    ujian_judul: h.ujian?.judul || '-',
+    show_result: h.ujian?.show_result ?? false,
+    nilai: h.nilai,
+    completed_at: h.waktu_selesai,
+    is_submitted: h.is_submitted
+  }))
+
+  return {
+    siswa_nama: siswa.nama,
+    total_ujian_selesai: totalUjianSelesai,
+    rata_rata_nilai: rataRataNilai,
+    available_ujian: formattedAvailableUjian,
+    recent_hasil: formattedRecentHasil
+  }
+}
+
+export default async function SiswaDashboardPage() {
   const session = await getSession()
   
   if (!session) {
@@ -40,37 +133,13 @@ async function getDashboardData(): Promise<{ data: DashboardData; user: { nama: 
     redirect("/login")
   }
 
-  const supabase = createAdminClient()
+  const data = await getDashboardData(session.user.id)
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/siswa/dashboard`, {
-    headers: {
-      'Cookie': `cbt_session_token=${session.token}`
-    }
-  })
-
-  if (!response.ok) {
-    return {
-      data: {
-        siswa_nama: session.user.nama || "Siswa",
-        total_ujian_selesai: 0,
-        rata_rata_nilai: 0,
-        available_ujian: [],
-        recent_hasil: []
-      },
-      user: { nama: session.user.nama || "Siswa", username: session.user.username, role: "siswa" }
-    }
+  const user = {
+    nama: session.user.nama || "Siswa",
+    username: session.user.username,
+    role: "siswa"
   }
-
-  const result = await response.json()
-
-  return {
-    data: result.data,
-    user: { nama: session.user.nama || "Siswa", username: session.user.username, role: "siswa" }
-  }
-}
-
-export default async function SiswaDashboardPage() {
-  const { data, user } = await getDashboardData()
 
   return (
     <DashboardLayout user={user}>

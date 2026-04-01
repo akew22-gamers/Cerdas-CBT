@@ -1,18 +1,26 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { LoginForm } from "@/components/auth/LoginForm"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 async function getSchoolIdentity() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/public/sekolah`, {
-      cache: 'no-store'
-    })
+    const supabase = createAdminClient()
     
-    if (!response.ok) {
+    const { data: sekolah, error } = await supabase
+      .from('identitas_sekolah')
+      .select('nama_sekolah, logo_url')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error || !sekolah) {
       return { nama_sekolah: 'Cerdas-CBT', logo_url: null }
     }
-    
-    const data = await response.json()
-    return data.data || { nama_sekolah: 'Cerdas-CBT', logo_url: null }
+
+    return {
+      nama_sekolah: sekolah.nama_sekolah || 'Cerdas-CBT',
+      logo_url: sekolah.logo_url
+    }
   } catch {
     return { nama_sekolah: 'Cerdas-CBT', logo_url: null }
   }

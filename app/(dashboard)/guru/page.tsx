@@ -18,31 +18,52 @@ interface DashboardData {
   }[]
 }
 
-async function getDashboardData(userId: string): Promise<{ data: DashboardData; user: { nama: string | null; username: string; role: string }; ujianIds: string[] }> {
+async function getDashboardData(userId: string): Promise<{ data: DashboardData; ujianIds: string[] }> {
   const supabase = createAdminClient()
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/guru/dashboard`, {
-    headers: {
-      'X-User-Id': userId,
-      'X-User-Role': 'guru'
-    }
-  })
+  const { data: kelasData } = await supabase
+    .from('kelas')
+    .select('id')
+    .eq('created_by', userId)
 
-  if (!response.ok) {
-    return {
-      data: {
-        kelas_count: 0,
-        siswa_count: 0,
-        ujian_count: 0,
-        ujian_aktif: 0,
-        recent_hasil: []
-      },
-      user: { nama: null, username: '', role: "guru" },
-      ujianIds: []
-    }
-  }
+  const { data: siswaData } = await supabase
+    .from('siswa')
+    .select('id')
+    .eq('created_by', userId)
 
-  const result = await response.json()
+  const { data: ujianData } = await supabase
+    .from('ujian')
+    .select('id, status')
+    .eq('created_by', userId)
+
+  const ujianAktif = (ujianData || []).filter((u: any) => u.status === 'aktif').length
+
+  const { data: recentHasil } = await supabase
+    .from('hasil_ujian')
+    .select(`
+      id,
+      nilai,
+      waktu_selesai,
+      siswa:siswa_id (
+        nama,
+        nisn
+      ),
+      ujian:ujian_id (
+        judul
+      )
+    `)
+    .eq('is_submitted', true)
+    .order('waktu_selesai', { ascending: false })
+    .limit(5)
+
+  const formattedRecentHasil = (recentHasil || []).map((h: any) => ({
+    id: h.id,
+    siswa_nama: h.siswa?.nama || '-',
+    siswa_nisn: h.siswa?.nisn || '-',
+    ujian_judul: h.ujian?.judul || '-',
+    nilai: h.nilai,
+    submitted_at: h.waktu_selesai
+  }))
 
   const { data: activeUjian } = await supabase
     .from('ujian')
@@ -51,8 +72,13 @@ async function getDashboardData(userId: string): Promise<{ data: DashboardData; 
     .eq('status', 'aktif')
 
   return {
-    data: result.data,
-    user: { nama: null, username: '', role: "guru" },
+    data: {
+      kelas_count: kelasData?.length || 0,
+      siswa_count: siswaData?.length || 0,
+      ujian_count: ujianData?.length || 0,
+      ujian_aktif: ujianAktif,
+      recent_hasil: formattedRecentHasil
+    },
     ujianIds: activeUjian ? activeUjian.map((u: { id: string }) => u.id) : []
   }
 }
