@@ -30,7 +30,8 @@ interface DashboardStats {
 }
 
 interface UserProfile {
-  nama: string
+  nama: string | null
+  username?: string
   role: string
 }
 

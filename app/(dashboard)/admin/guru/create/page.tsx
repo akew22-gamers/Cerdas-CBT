@@ -1,27 +1,25 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
 import { DashboardLayout } from '@/components/layout'
 import { GuruForm } from '@/components/admin/GuruForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default async function CreateGuruPage() {
-  const supabase = await createClient()
+  const session = await getSession()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+  if (!session) {
     redirect('/login')
   }
 
-  const { data: adminData } = await supabase
-    .from('super_admin')
-    .select('username')
-    .eq('id', user.id)
-    .single()
+  if (session.user.role !== 'super_admin') {
+    redirect('/login')
+  }
 
   return (
     <DashboardLayout
       user={{
-        nama: adminData?.username || 'Super Admin',
+        nama: session.user.nama,
+        username: session.user.username,
         role: 'super_admin'
       }}
     >

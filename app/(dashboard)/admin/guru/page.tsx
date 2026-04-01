@@ -1,10 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { DashboardLayout } from '@/components/layout'
 import { GuruTable } from '@/components/admin/GuruTable'
+import { GuruSearchForm } from '@/components/admin/GuruSearchForm'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import Link from 'next/link'
 
 interface Guru {
@@ -19,22 +20,19 @@ interface GuruListPageProps {
 }
 
 export default async function GuruListPage({ searchParams }: GuruListPageProps) {
-  const supabase = await createClient()
-  const { search = '', page = '1' } = await searchParams
+  const session = await getSession()
 
-  // Get current user
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+  if (!session) {
     redirect('/login')
   }
 
-  const { data: adminData } = await supabase
-    .from('super_admin')
-    .select('username')
-    .eq('id', user.id)
-    .single()
+  if (session.user.role !== 'super_admin') {
+    redirect('/login')
+  }
 
-  // Fetch guru list
+  const supabase = createAdminClient()
+  const { search = '', page = '1' } = await searchParams
+
   let query = supabase
     .from('guru')
     .select('*', { count: 'exact' })
@@ -48,7 +46,8 @@ export default async function GuruListPage({ searchParams }: GuruListPageProps) 
   return (
     <DashboardLayout
       user={{
-        nama: adminData?.username || 'Super Admin',
+        nama: session.user.nama,
+        username: session.user.username,
         role: 'super_admin'
       }}
     >
@@ -67,27 +66,10 @@ export default async function GuruListPage({ searchParams }: GuruListPageProps) 
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Cari username atau nama..."
-              defaultValue={search}
-              className="pl-9"
-              name="search"
-              onChange={(e) => {
-                const form = e.target.form
-                if (form) {
-                  form.requestSubmit()
-                }
-              }}
-            />
-          </div>
+          <GuruSearchForm defaultValue={search} />
         </div>
 
-        <GuruTable 
-          guruList={guruList || []} 
-          onRefresh={() => {}}
-        />
+        <GuruTable guruList={guruList || []} />
       </div>
     </DashboardLayout>
   )

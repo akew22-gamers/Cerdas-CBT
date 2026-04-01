@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { DashboardLayout } from '@/components/layout'
 import { GuruForm } from '@/components/admin/GuruForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,19 +10,18 @@ interface EditGuruPageProps {
 }
 
 export default async function EditGuruPage({ params }: EditGuruPageProps) {
-  const supabase = await createClient()
-  const { id } = await params
+  const session = await getSession()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+  if (!session) {
     redirect('/login')
   }
 
-  const { data: adminData } = await supabase
-    .from('super_admin')
-    .select('username')
-    .eq('id', user.id)
-    .single()
+  if (session.user.role !== 'super_admin') {
+    redirect('/login')
+  }
+
+  const supabase = createAdminClient()
+  const { id } = await params
 
   const { data: guruData } = await supabase
     .from('guru')
@@ -36,7 +36,8 @@ export default async function EditGuruPage({ params }: EditGuruPageProps) {
   return (
     <DashboardLayout
       user={{
-        nama: adminData?.username || 'Super Admin',
+        nama: session.user.nama,
+        username: session.user.username,
         role: 'super_admin'
       }}
     >

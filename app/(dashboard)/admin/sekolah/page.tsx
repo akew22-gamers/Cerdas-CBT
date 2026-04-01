@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { DashboardLayout } from '@/components/layout'
 import { SekolahForm } from '@/components/sekolah/SekolahForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,18 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SekolahDisplay } from '@/components/sekolah/SekolahDisplay'
 
 export default async function AdminSekolahPage() {
-  const supabase = await createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+  const session = await getSession()
+
+  if (!session) {
     redirect('/login')
   }
 
-  const { data: adminData } = await supabase
-    .from('super_admin')
-    .select('username')
-    .eq('id', user.id)
-    .single()
+  if (session.user.role !== 'super_admin') {
+    redirect('/login')
+  }
+
+  const supabase = createAdminClient()
 
   const { data: sekolahData } = await supabase
     .from('identitas_sekolah')
@@ -32,7 +32,8 @@ export default async function AdminSekolahPage() {
   return (
     <DashboardLayout
       user={{
-        nama: adminData?.username || 'Administrator',
+        nama: session.user.nama,
+        username: session.user.username,
         role: 'super_admin'
       }}
     >
