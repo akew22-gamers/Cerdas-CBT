@@ -4,9 +4,8 @@ import { redirect } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout'
 import { SiswaTable } from '@/components/siswa/SiswaTable'
 import { AddSiswaDialog } from '@/components/siswa/AddSiswaDialog'
-import { ImportSiswaDialog } from '@/components/siswa/ImportSiswaDialog'
-import { Button } from '@/components/ui/button'
-import { Plus, Users, Filter } from 'lucide-react'
+import { ImportSiswaButton } from '@/components/siswa/ImportSiswaButton'
+import { Users, Filter } from 'lucide-react'
 import { KelasFilter } from '@/components/siswa/KelasFilter'
 
 interface Kelas {
@@ -88,7 +87,7 @@ export default async function SiswaListPage({
             </div>
           </div>
           <div className="flex gap-2">
-            <ImportSiswaDialog onSuccess={() => {}} />
+            <ImportSiswaButton />
             <AddSiswaDialog />
           </div>
         </div>
