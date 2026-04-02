@@ -4,9 +4,8 @@ import { redirect } from "next/navigation"
 import { DashboardLayout } from "@/components/layout"
 import { SoalTable } from "@/components/soal/SoalTable"
 import { UjianFilter } from "@/components/soal/UjianFilter"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { Upload, FileQuestion, Plus, AlertCircle } from "lucide-react"
+import { SoalActions } from "@/components/soal/SoalActions"
+import { FileQuestion, AlertCircle } from "lucide-react"
 
 interface Soal {
   id: string
@@ -109,28 +108,10 @@ export default async function SoalListPage({ searchParams }: { searchParams: Pro
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex gap-2">
-              <Link href={selectedUjianId ? `/guru/soal/import?ujian_id=${selectedUjianId}` : '#'}>
-                <Button 
-                  variant="outline" 
-                  className="gap-2 hover:bg-slate-50"
-                  disabled={!selectedUjianId}
-                >
-                  <Upload className="h-4 w-4" />
-                  Import Excel
-                </Button>
-              </Link>
-              <Link
-                href={selectedUjianId ? `/guru/soal/create?ujian_id=${selectedUjianId}` : '/guru/soal/create'}
-                className={!selectedUjianId ? 'pointer-events-none opacity-50' : ''}
-              >
-                <Button 
-                  className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
-                  disabled={!selectedUjianId}
-                >
-                  <Plus className="h-4 w-4" />
-                  Soal Baru
-                </Button>
-              </Link>
+              <SoalActions 
+                selectedUjianId={selectedUjianId} 
+                ujianStatus={ujianStatus} 
+              />
             </div>
             {!selectedUjianId && (
               <p className="text-xs text-slate-500 ml-2">Pilih ujian terlebih dahulu untuk menambah soal</p>
