@@ -27,44 +27,24 @@ export function ExamLayout({
   const [examStarted, setExamStarted] = useState(false)
   const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null)
   const [fullscreenError, setFullscreenError] = useState<string | null>(null)
-  const [fullscreenSupported, setFullscreenSupported] = useState(true)
-  const isInitializingRef = useRef(false)
+  const fullscreenAttemptedRef = useRef(false)
 
-  useEffect(() => {
-    setFullscreenSupported(document.fullscreenEnabled)
-  }, [])
-
-  const enterFullscreen = useCallback(async () => {
-    const elem = document.documentElement
-    if (!document.fullscreenElement) {
-      try {
-        await elem.requestFullscreen()
-        setIsFullscreen(true)
-        setFullscreenError(null)
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err)
-        console.error('Fullscreen error:', errorMessage)
-        setFullscreenError('Browser memblokir mode fullscreen. Lanjutkan tanpa fullscreen atau coba lagi.')
-      }
-    }
-  }, [])
-
-  const startExam = useCallback(async () => {
+  const handleStartExam = useCallback(async () => {
+    fullscreenAttemptedRef.current = true
     setFullscreenError(null)
-    isInitializingRef.current = true
     
-    if (!document.fullscreenEnabled) {
-      console.warn('Fullscreen tidak didukung browser ini')
-      setFullscreenSupported(false)
-    } else {
-      await enterFullscreen()
+    if (document.fullscreenEnabled) {
+      try {
+        await document.documentElement.requestFullscreen()
+        setIsFullscreen(true)
+      } catch (err) {
+        console.error('Fullscreen error:', err)
+        setFullscreenError('Gagal masuk mode fullscreen. Klik "Mulai Ujian" lagi untuk melanjutkan.')
+        return
+      }
     }
     
     setExamStarted(true)
-    
-    setTimeout(() => {
-      isInitializingRef.current = false
-    }, 3000)
     
     if ('wakeLock' in navigator) {
       try {
@@ -74,15 +54,27 @@ export function ExamLayout({
         console.error('Wake lock error:', err)
       }
     }
-  }, [enterFullscreen])
+  }, [])
+
+  const enterFullscreen = useCallback(async () => {
+    if (!document.fullscreenElement) {
+      try {
+        await document.documentElement.requestFullscreen()
+        setIsFullscreen(true)
+        setFullscreenError(null)
+      } catch (err) {
+        console.error('Re-enter fullscreen error:', err)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      const wasFullscreen = isFullscreen
       const nowFullscreen = !!document.fullscreenElement
+      const wasFullscreen = isFullscreen
       setIsFullscreen(nowFullscreen)
       
-      if (wasFullscreen && !nowFullscreen && examStarted && !isInitializingRef.current) {
+      if (wasFullscreen && !nowFullscreen && examStarted) {
         onFullscreenExit()
       }
     }
@@ -176,9 +168,8 @@ export function ExamLayout({
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-left">
             <h3 className="font-medium text-amber-800 mb-2">Petunjuk Ujian:</h3>
             <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside">
-              <li>Klik tombol di bawah untuk memulai ujian</li>
+              <li>Klik tombol "Mulai Ujian" di bawah</li>
               <li>Browser akan otomatis masuk mode fullscreen</li>
-              <li>Jika fullscreen gagal, ujian tetap bisa dilanjutkan</li>
               <li>Jangan keluar dari mode fullscreen selama ujian</li>
               <li>Layar akan tetap aktif selama ujian berlangsung</li>
               <li>Klik "Kirim Jawaban" jika sudah selesai</li>
@@ -189,14 +180,15 @@ export function ExamLayout({
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-left">
               <p className="text-sm text-red-800 font-medium mb-2">⚠️ Perhatian:</p>
               <p className="text-sm text-red-700">{fullscreenError}</p>
+              <p className="text-xs text-red-600 mt-2">Ujian dapat dilanjutkan tanpa fullscreen.</p>
             </div>
           )}
           
           <button
-            onClick={startExam}
+            onClick={handleStartExam}
             className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl"
           >
-            Mulai Ujian
+            {fullscreenError ? 'Lanjutkan Tanpa Fullscreen' : 'Mulai Ujian'}
           </button>
         </div>
       </div>
@@ -232,7 +224,7 @@ export function ExamLayout({
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4 md:gap-6">
-              {!isFullscreen && fullscreenSupported && (
+              {!isFullscreen && document.fullscreenEnabled && (
                 <button
                   onClick={enterFullscreen}
                   className="hidden sm:flex items-center gap-1 px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-medium rounded transition-colors"
