@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
 import { ExamLayout } from '@/components/exam/ExamLayout'
+import { PreExamModal } from '@/components/exam/PreExamModal'
 import { QuestionDisplay } from '@/components/exam/QuestionDisplay'
 import { QuestionNavigator } from '@/components/exam/QuestionNavigator'
 import { Timer } from '@/components/exam/Timer'
@@ -36,7 +37,10 @@ interface SiswaInfo {
 export default function ExamPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
+  
+  
+  const [showPreExamModal, setShowPreExamModal] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [durasi, setDurasi] = useState<number>(60)
   const [soalList, setSoalList] = useState<Soal[]>([])
@@ -47,56 +51,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false)
   const [siswaInfo, setSiswaInfo] = useState<SiswaInfo | null>(null)
 
-  const fetchStatus = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/siswa/ujian/${resolvedParams.id}/status`)
-      const data = await res.json()
-      if (data.success) {
-        setStatus(data.data)
-        if (data.data.is_finished || data.data.is_submitted) {
-          router.push(`/siswa/ujian/${resolvedParams.id}/hasil`)
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching status:', err)
-    }
-  }, [resolvedParams.id, router])
-
-  const fetchSoal = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/siswa/ujian/${resolvedParams.id}/soal`)
-      const data = await res.json()
-      if (data.success) {
-        setSoalList(data.data.soal)
-      } else {
-        setError(data.error?.message || 'Gagal memuat soal')
-      }
-    } catch (err) {
-      console.error('Error fetching soal:', err)
-      setError('Gagal memuat soal')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [resolvedParams.id])
-
-  const startExam = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/siswa/ujian/${resolvedParams.id}/start`, { method: 'POST' })
-      const data = await res.json()
-      if (data.success) {
-        setDurasi(data.data.durasi || 60)
-        await fetchSoal()
-      } else {
-        setError(data.error?.message || 'Gagal memulai ujian')
-        setIsLoading(false)
-      }
-    } catch (err) {
-      console.error('Error starting exam:', err)
-      setError('Gagal memulai ujian')
-      setIsLoading(false)
-    }
-  }, [resolvedParams.id, fetchSoal])
-
+  
   useEffect(() => {
     const fetchSiswaInfo = async () => {
       try {
@@ -115,14 +70,79 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     fetchSiswaInfo()
   }, [])
 
+  
   useEffect(() => {
-    startExam()
-  }, [startExam])
+    const checkStatus = async () => {
+      try {
+        const res = await fetch(`/api/siswa/ujian/${resolvedParams.id}/status`)
+        const data = await res.json()
+        if (data.success) {
+          if (data.data.is_finished || data.data.is_submitted) {
+            router.push(`/siswa/ujian/${resolvedParams.id}/hasil`)
+          }
+          setStatus(data.data)
+        }
+      } catch (err) {
+        console.error('Error checking status:', err)
+      }
+    }
+    checkStatus()
+  }, [resolvedParams.id, router])
 
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/siswa/ujian/${resolvedParams.id}/status`)
+      const data = await res.json()
+      if (data.success) {
+        setStatus(data.data)
+      }
+    } catch (err) {
+      console.error('Error fetching status:', err)
+    }
+  }, [resolvedParams.id])
+
+  const loadExam = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      
+      const startRes = await fetch(`/api/siswa/ujian/${resolvedParams.id}/start`, { method: 'POST' })
+      const startData = await startRes.json()
+      
+      if (!startData.success) {
+        setError(startData.error?.message || 'Gagal memulai ujian')
+        setIsLoading(false)
+        return
+      }
+      
+      setDurasi(startData.data.durasi || 60)
+      
+      
+      const soalRes = await fetch(`/api/siswa/ujian/${resolvedParams.id}/soal`)
+      const soalData = await soalRes.json()
+      
+      if (soalData.success) {
+        setSoalList(soalData.data.soal)
+        setShowPreExamModal(false)
+      } else {
+        setError(soalData.error?.message || 'Gagal memuat soal')
+      }
+    } catch (err) {
+      console.error('Error loading exam:', err)
+      setError('Gagal memuat ujian')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [resolvedParams.id])
+
+  
   useEffect(() => {
+    if (showPreExamModal) return
+    
     const interval = setInterval(fetchStatus, 5000)
     return () => clearInterval(interval)
-  }, [fetchStatus])
+  }, [showPreExamModal, fetchStatus])
 
   useEffect(() => {
     if (status && durasi > 0) {
@@ -170,6 +190,10 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
       const data = await res.json()
       
       if (data.success) {
+        
+        if (document.fullscreenElement) {
+          await document.exitFullscreen()
+        }
         router.push(`/siswa/ujian/${resolvedParams.id}/hasil`)
       } else {
         setError(data.error?.message || 'Gagal mengumpulkan jawaban')
@@ -220,26 +244,38 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden) {
+      if (document.hidden && !showPreExamModal) {
         handleTabSwitch()
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [])
+  }, [showPreExamModal])
 
+  
+  if (showPreExamModal) {
+    return (
+      <PreExamModal 
+        siswaInfo={siswaInfo || undefined}
+        onStartExam={loadExam}
+      />
+    )
+  }
+
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Memuat ujian...</p>
+          <p className="text-gray-600">Memuat soal ujian...</p>
         </div>
       </div>
     )
   }
 
+  
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -256,6 +292,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     )
   }
 
+  
   return (
     <ExamLayout
       timer={

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, ReactNode, useCallback, useRef } from 'react'
+import { useEffect, useState, ReactNode, useCallback } from 'react'
 import Image from 'next/image'
 
 interface ExamLayoutProps {
@@ -24,44 +24,13 @@ export function ExamLayout({
   siswaInfo
 }: ExamLayoutProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [examStarted, setExamStarted] = useState(false)
   const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null)
-  const [fullscreenError, setFullscreenError] = useState<string | null>(null)
-  const fullscreenAttemptedRef = useRef(false)
-
-  const handleStartExam = useCallback(async () => {
-    fullscreenAttemptedRef.current = true
-    setFullscreenError(null)
-    
-    if (document.fullscreenEnabled) {
-      try {
-        await document.documentElement.requestFullscreen()
-        setIsFullscreen(true)
-      } catch (err) {
-        console.error('Fullscreen error:', err)
-        setFullscreenError('Gagal masuk mode fullscreen. Klik "Mulai Ujian" lagi untuk melanjutkan.')
-        return
-      }
-    }
-    
-    setExamStarted(true)
-    
-    if ('wakeLock' in navigator) {
-      try {
-        const lock = await navigator.wakeLock.request('screen')
-        setWakeLock(lock)
-      } catch (err) {
-        console.error('Wake lock error:', err)
-      }
-    }
-  }, [])
 
   const enterFullscreen = useCallback(async () => {
-    if (!document.fullscreenElement) {
+    if (!document.fullscreenElement && document.fullscreenEnabled) {
       try {
         await document.documentElement.requestFullscreen()
         setIsFullscreen(true)
-        setFullscreenError(null)
       } catch (err) {
         console.error('Re-enter fullscreen error:', err)
       }
@@ -70,33 +39,40 @@ export function ExamLayout({
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      const nowFullscreen = !!document.fullscreenElement
       const wasFullscreen = isFullscreen
+      const nowFullscreen = !!document.fullscreenElement
       setIsFullscreen(nowFullscreen)
       
-      if (wasFullscreen && !nowFullscreen && examStarted) {
+      if (wasFullscreen && !nowFullscreen) {
         onFullscreenExit()
       }
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [isFullscreen, onFullscreenExit, examStarted])
+  }, [isFullscreen, onFullscreenExit])
 
   useEffect(() => {
+    let wakeLockInstance: WakeLockSentinel | null = null
+    
+    if ('wakeLock' in navigator) {
+      navigator.wakeLock.request('screen').then(lock => {
+        wakeLockInstance = lock
+        setWakeLock(lock)
+      }).catch(console.error)
+    }
+    
     return () => {
-      if (wakeLock) {
-        wakeLock.release().catch(console.error)
+      if (wakeLockInstance) {
+        wakeLockInstance.release().catch(console.error)
       }
       if (document.fullscreenElement) {
         document.exitFullscreen()
       }
     }
-  }, [wakeLock])
+  }, [])
 
   useEffect(() => {
-    if (!examStarted) return
-    
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
         e.preventDefault()
@@ -120,22 +96,20 @@ export function ExamLayout({
       document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('contextmenu', handleContextMenu)
     }
-  }, [examStarted])
+  }, [])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden && examStarted) {
+      if (document.hidden) {
         console.log('Tab switch detected')
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [examStarted])
+  }, [])
 
   useEffect(() => {
-    if (!examStarted) return
-    
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault()
       e.returnValue = ''
@@ -143,57 +117,7 @@ export function ExamLayout({
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [examStarted])
-
-  if (!examStarted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Siap Memulai Ujian?</h1>
-          
-          {siswaInfo && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-gray-600">Peserta:</p>
-              <p className="font-semibold text-gray-900">{siswaInfo.nama}</p>
-              <p className="text-sm text-gray-500">NISN: {siswaInfo.nisn || '-'}</p>
-            </div>
-          )}
-          
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-left">
-            <h3 className="font-medium text-amber-800 mb-2">Petunjuk Ujian:</h3>
-            <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside">
-              <li>Klik tombol "Mulai Ujian" di bawah</li>
-              <li>Browser akan otomatis masuk mode fullscreen</li>
-              <li>Jangan keluar dari mode fullscreen selama ujian</li>
-              <li>Layar akan tetap aktif selama ujian berlangsung</li>
-              <li>Klik "Kirim Jawaban" jika sudah selesai</li>
-            </ul>
-          </div>
-          
-          {fullscreenError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-left">
-              <p className="text-sm text-red-800 font-medium mb-2">⚠️ Perhatian:</p>
-              <p className="text-sm text-red-700">{fullscreenError}</p>
-              <p className="text-xs text-red-600 mt-2">Ujian dapat dilanjutkan tanpa fullscreen.</p>
-            </div>
-          )}
-          
-          <button
-            onClick={handleStartExam}
-            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl"
-          >
-            {fullscreenError ? 'Lanjutkan Tanpa Fullscreen' : 'Mulai Ujian'}
-          </button>
-        </div>
-      </div>
-    )
-  }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
