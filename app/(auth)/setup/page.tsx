@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import Image from 'next/image'
 import { Database, RefreshCw, Plus, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 
-type SetupStep = 'database' | 'admin' | 'sekolah' | 'confirm'
+type SetupStep = 'checking' | 'database' | 'admin' | 'sekolah' | 'confirm'
 type DatabaseState = 'checking' | 'ready' | 'has_data' | 'empty' | 'error'
 
 interface SchoolData {
@@ -33,7 +33,7 @@ interface AdminData {
 
 export default function SetupPage() {
   const router = useRouter()
-  const [currentStep, setCurrentStep] = useState<SetupStep>('database')
+  const [currentStep, setCurrentStep] = useState<SetupStep>('checking')
   const [isLoading, setIsLoading] = useState(false)
   const [dbState, setDbState] = useState<DatabaseState>('checking')
   const [dbMessage, setDbMessage] = useState('')
@@ -58,8 +58,24 @@ export default function SetupPage() {
   })
 
   useEffect(() => {
-    checkDatabase()
+    checkSetupStatus()
   }, [])
+
+  const checkSetupStatus = async () => {
+    try {
+      const res = await fetch('/api/setup/status')
+      const data = await res.json()
+      
+      if (data.success && data.data?.setup_completed) {
+        router.push('/login')
+        return
+      }
+      
+      checkDatabase()
+    } catch {
+      checkDatabase()
+    }
+  }
 
   const checkDatabase = async () => {
     setDbState('checking')
@@ -70,13 +86,16 @@ export default function SetupPage() {
       if (data.success) {
         setDbState(data.data.state)
         setDbMessage(data.data.message)
+        setCurrentStep('database')
       } else {
         setDbState('error')
         setDbMessage(data.error?.message || 'Gagal memeriksa database')
+        setCurrentStep('database')
       }
     } catch {
       setDbState('error')
       setDbMessage('Tidak dapat terhubung ke database')
+      setCurrentStep('database')
     }
   }
 
@@ -283,6 +302,13 @@ export default function SetupPage() {
         </CardHeader>
 
         <CardContent>
+          {currentStep === 'checking' && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
+              <p className="text-gray-600">Memeriksa status aplikasi...</p>
+            </div>
+          )}
+
           {currentStep === 'database' && renderDatabaseStep()}
 
           {currentStep === 'admin' && (

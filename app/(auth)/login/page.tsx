@@ -1,33 +1,48 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { LoginForm } from "@/components/auth/LoginForm"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { redirect } from "next/navigation"
 
-async function getSchoolIdentity() {
+async function getSetupStatus() {
   try {
     const supabase = createAdminClient()
     
-    const { data: sekolah, error } = await supabase
+    const { data: identitasSekolah, error } = await supabase
+      .from('identitas_sekolah')
+      .select('id, setup_wizard_completed')
+      .maybeSingle()
+
+    if (error) {
+      return { isSetupComplete: false, nama_sekolah: 'Cerdas-CBT' }
+    }
+
+    if (!identitasSekolah || !identitasSekolah.setup_wizard_completed) {
+      return { isSetupComplete: false, nama_sekolah: 'Cerdas-CBT' }
+    }
+
+    const { data: sekolah } = await supabase
       .from('identitas_sekolah')
       .select('nama_sekolah, logo_url')
       .order('updated_at', { ascending: false })
       .limit(1)
       .single()
 
-    if (error || !sekolah) {
-      return { nama_sekolah: 'Cerdas-CBT', logo_url: null }
-    }
-
     return {
-      nama_sekolah: sekolah.nama_sekolah || 'Cerdas-CBT',
-      logo_url: sekolah.logo_url
+      isSetupComplete: true,
+      nama_sekolah: sekolah?.nama_sekolah || 'Cerdas-CBT',
+      logo_url: sekolah?.logo_url
     }
   } catch {
-    return { nama_sekolah: 'Cerdas-CBT', logo_url: null }
+    return { isSetupComplete: false, nama_sekolah: 'Cerdas-CBT' }
   }
 }
 
 export default async function LoginPage() {
-  const school = await getSchoolIdentity()
+  const setupStatus = await getSetupStatus()
+
+  if (!setupStatus.isSetupComplete) {
+    redirect('/setup')
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 flex flex-col items-center justify-center p-4 sm:p-6">
@@ -58,13 +73,13 @@ export default async function LoginPage() {
             Cerdas-CBT
           </h1>
           <p className="text-sm text-slate-500 font-medium">
-            {school.nama_sekolah}
+            {setupStatus.nama_sekolah}
           </p>
         </div>
 
         <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/60 shadow-xl shadow-slate-200/50 overflow-hidden">
           <CardContent className="p-6 sm:p-8">
-            <LoginForm schoolName={school.nama_sekolah} />
+            <LoginForm schoolName={setupStatus.nama_sekolah} />
           </CardContent>
         </Card>
 

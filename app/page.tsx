@@ -1,18 +1,25 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 
 export default async function Home() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   
-  const { data: identitasSekolah } = await supabase
-    .from('identitas_sekolah')
-    .select('setup_wizard_completed')
-    .limit(1)
-    .single()
+  try {
+    const { data: identitasSekolah, error } = await supabase
+      .from('identitas_sekolah')
+      .select('id, setup_wizard_completed')
+      .maybeSingle()
 
-  if (!identitasSekolah?.setup_wizard_completed) {
+    if (error) {
+      redirect('/setup')
+    }
+
+    if (!identitasSekolah || !identitasSekolah.setup_wizard_completed) {
+      redirect('/setup')
+    }
+
+    redirect('/login')
+  } catch {
     redirect('/setup')
   }
-
-  redirect('/login')
 }
