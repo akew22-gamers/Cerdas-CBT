@@ -9,15 +9,19 @@ interface TimerProps {
 }
 
 export function Timer({ timeRemainingMs, durasi, onTimeUp }: TimerProps) {
-  const [seconds, setSeconds] = useState(Math.floor(timeRemainingMs / 1000))
+  const [seconds, setSeconds] = useState<number | null>(null)
   const [hasTriggered, setHasTriggered] = useState(false)
 
   useEffect(() => {
-    setSeconds(Math.floor(timeRemainingMs / 1000))
-    setHasTriggered(false)
+    if (timeRemainingMs > 0) {
+      setSeconds(Math.floor(timeRemainingMs / 1000))
+      setHasTriggered(false)
+    }
   }, [timeRemainingMs])
 
   useEffect(() => {
+    if (seconds === null) return
+
     if (seconds <= 0 && !hasTriggered) {
       setHasTriggered(true)
       onTimeUp()
@@ -28,6 +32,7 @@ export function Timer({ timeRemainingMs, durasi, onTimeUp }: TimerProps) {
 
     const interval = setInterval(() => {
       setSeconds((prev) => {
+        if (prev === null) return null
         if (prev <= 1) {
           clearInterval(interval)
           return 0
@@ -38,6 +43,14 @@ export function Timer({ timeRemainingMs, durasi, onTimeUp }: TimerProps) {
 
     return () => clearInterval(interval)
   }, [seconds, onTimeUp, hasTriggered])
+
+  if (seconds === null) {
+    return (
+      <div className="text-2xl font-bold font-mono text-gray-900">
+        --:--
+      </div>
+    )
+  }
 
   const minutes = Math.floor(seconds / 60)
   const secs = seconds % 60

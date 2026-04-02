@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, ReactNode } from 'react'
+import { useEffect, useState, ReactNode, useCallback } from 'react'
 import Image from 'next/image'
 
 interface ExamLayoutProps {
@@ -20,8 +20,9 @@ export function ExamLayout({
 }: ExamLayoutProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(true)
+  const [examEnded, setExamEnded] = useState(false)
 
-  const enterFullscreen = async () => {
+  const enterFullscreen = useCallback(async () => {
     try {
       const elem = document.documentElement
       if (!document.fullscreenElement) {
@@ -33,20 +34,37 @@ export function ExamLayout({
       console.error('Fullscreen error:', err)
       setShowFullscreenPrompt(false)
     }
-  }
+  }, [])
+
+  const skipFullscreen = useCallback(() => {
+    setShowFullscreenPrompt(false)
+  }, [])
+
+  const exitFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+        setIsFullscreen(false)
+      }
+    } catch (err) {
+      console.error('Exit fullscreen error:', err)
+    }
+  }, [])
 
   useEffect(() => {
     const handleFullscreenChange = () => {
       const wasFullscreen = isFullscreen
-      setIsFullscreen(!!document.fullscreenElement)
-      if (wasFullscreen && !document.fullscreenElement) {
+      const nowFullscreen = !!document.fullscreenElement
+      setIsFullscreen(nowFullscreen)
+      
+      if (wasFullscreen && !nowFullscreen && !examEnded) {
         onFullscreenExit()
       }
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [isFullscreen, onFullscreenExit])
+  }, [isFullscreen, onFullscreenExit, examEnded])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -57,6 +75,9 @@ export function ExamLayout({
         e.preventDefault()
       }
       if (e.key === 'PrintScreen') {
+        e.preventDefault()
+      }
+      if (e.key === 'Escape' && isFullscreen && !examEnded) {
         e.preventDefault()
       }
     }
@@ -72,7 +93,7 @@ export function ExamLayout({
       document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('contextmenu', handleContextMenu)
     }
-  }, [])
+  }, [isFullscreen, examEnded])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -85,28 +106,53 @@ export function ExamLayout({
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
 
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen()
+      }
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50">
       {showFullscreenPrompt && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 text-center">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Mode Fullscreen</h2>
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Mode Fullscreen</h2>
             <p className="text-gray-600 mb-6">
-              Untuk keamanan ujian, silakan masuk ke mode fullscreen. 
+              Untuk keamanan ujian, disarankan masuk ke mode fullscreen. 
               Keluar dari fullscreen akan tercatat sebagai pelanggaran.
             </p>
-            <button
-              onClick={enterFullscreen}
-              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-            >
-              Masuk Fullscreen
-            </button>
-            <button
-              onClick={() => setShowFullscreenPrompt(false)}
-              className="w-full mt-3 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
-            >
-              Lanjutkan Tanpa Fullscreen
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={enterFullscreen}
+                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Masuk Fullscreen (Disarankan)
+              </button>
+              <button
+                onClick={skipFullscreen}
+                className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              >
+                Lanjutkan Tanpa Fullscreen
+              </button>
+            </div>
           </div>
         </div>
       )}
