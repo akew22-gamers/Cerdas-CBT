@@ -31,10 +31,21 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient()
 
-    const { data: existingSetup } = await supabase
+    const { data: existingSetup, error: existingError } = await supabase
       .from('identitas_sekolah')
-      .select('setup_wizard_completed')
-      .single()
+      .select('id, setup_wizard_completed')
+      .maybeSingle()
+
+    if (existingError && existingError.code !== 'PGRST116') {
+      console.error('Error checking existing setup:', existingError)
+      return NextResponse.json<ApiErrorResponse>({
+        success: false,
+        error: {
+          code: 'DATABASE_ERROR',
+          message: 'Gagal memeriksa status setup'
+        }
+      }, { status: 500 })
+    }
 
     if (existingSetup?.setup_wizard_completed) {
       return NextResponse.json<ApiErrorResponse>({
@@ -47,6 +58,15 @@ export async function POST(request: Request) {
     }
 
     const passwordHash = await bcrypt.hash(super_admin.password, 10)
+
+    const { data: existingAdmin } = await supabase
+      .from('super_admin')
+      .select('id')
+      .maybeSingle()
+
+    if (existingAdmin) {
+      await supabase.from('super_admin').delete().eq('id', existingAdmin.id)
+    }
 
     const { data: adminData, error: adminError } = await supabase
       .from('super_admin')
@@ -68,25 +88,53 @@ export async function POST(request: Request) {
       }, { status: 500 })
     }
 
-    const { data: sekolahData, error: sekolahError } = await supabase
-      .from('identitas_sekolah')
-      .insert({
-        nama_sekolah: sekolah.nama_sekolah,
-        npsn: sekolah.npsn || null,
-        alamat: sekolah.alamat || null,
-        telepon: sekolah.telepon || null,
-        email: sekolah.email || null,
-        website: sekolah.website || null,
-        kepala_sekolah: sekolah.kepala_sekolah || null,
-        tahun_ajaran: sekolah.tahun_ajaran,
-        logo_url: sekolah.logo_url || null,
-        setup_wizard_completed: true,
-        updated_by: adminData.id
-      })
-      .select('id, nama_sekolah, npsn')
-      .single()
+    let sekolahData
+    let sekolahError
 
-    if (sekolahError) {
+    if (existingSetup) {
+      const result = await supabase
+        .from('identitas_sekolah')
+        .update({
+          nama_sekolah: sekolah.nama_sekolah,
+          npsn: sekolah.npsn || null,
+          alamat: sekolah.alamat || null,
+          telepon: sekolah.telepon || null,
+          email: sekolah.email || null,
+          website: sekolah.website || null,
+          kepala_sekolah: sekolah.kepala_sekolah || null,
+          tahun_ajaran: sekolah.tahun_ajaran,
+          logo_url: sekolah.logo_url || null,
+          setup_wizard_completed: true,
+          updated_by: adminData.id
+        })
+        .eq('id', existingSetup.id!)
+        .select('id, nama_sekolah, npsn')
+        .single()
+      sekolahData = result.data
+      sekolahError = result.error
+    } else {
+      const result = await supabase
+        .from('identitas_sekolah')
+        .insert({
+          nama_sekolah: sekolah.nama_sekolah,
+          npsn: sekolah.npsn || null,
+          alamat: sekolah.alamat || null,
+          telepon: sekolah.telepon || null,
+          email: sekolah.email || null,
+          website: sekolah.website || null,
+          kepala_sekolah: sekolah.kepala_sekolah || null,
+          tahun_ajaran: sekolah.tahun_ajaran,
+          logo_url: sekolah.logo_url || null,
+          setup_wizard_completed: true,
+          updated_by: adminData.id
+        })
+        .select('id, nama_sekolah, npsn')
+        .single()
+      sekolahData = result.data
+      sekolahError = result.error
+    }
+
+    if (sekolahError || !sekolahData) {
       console.error('Identitas sekolah creation error:', sekolahError)
       await supabase.from('super_admin').delete().eq('id', adminData.id)
       return NextResponse.json<ApiErrorResponse>({
@@ -103,7 +151,7 @@ export async function POST(request: Request) {
       role: 'super_admin',
       action: 'setup_completed',
       entity_type: 'identitas_sekolah',
-      entity_id: sekolahData.id,
+      entity_id: sekolahData!.id,
       details: { username: super_admin.username }
     })
 
@@ -120,9 +168,9 @@ export async function POST(request: Request) {
           username: adminData.username
         },
         sekolah: {
-          id: sekolahData.id,
-          nama_sekolah: sekolahData.nama_sekolah,
-          npsn: sekolahData.npsn ?? undefined
+          id: sekolahData!.id,
+          nama_sekolah: sekolahData!.nama_sekolah,
+          npsn: sekolahData!.npsn ?? undefined
         }
       }
     })
