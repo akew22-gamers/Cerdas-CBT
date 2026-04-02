@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, ReactNode, useCallback } from 'react'
+import { useEffect, useState, ReactNode, useCallback, useRef } from 'react'
 import Image from 'next/image'
 
 interface ExamLayoutProps {
@@ -28,6 +28,7 @@ export function ExamLayout({
   const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null)
   const [fullscreenError, setFullscreenError] = useState<string | null>(null)
   const [fullscreenSupported, setFullscreenSupported] = useState(true)
+  const isInitializingRef = useRef(false)
 
   useEffect(() => {
     setFullscreenSupported(document.fullscreenEnabled)
@@ -50,6 +51,7 @@ export function ExamLayout({
 
   const startExam = useCallback(async () => {
     setFullscreenError(null)
+    isInitializingRef.current = true
     
     if (!document.fullscreenEnabled) {
       console.warn('Fullscreen tidak didukung browser ini')
@@ -59,6 +61,10 @@ export function ExamLayout({
     }
     
     setExamStarted(true)
+    
+    setTimeout(() => {
+      isInitializingRef.current = false
+    }, 3000)
     
     if ('wakeLock' in navigator) {
       try {
@@ -76,7 +82,7 @@ export function ExamLayout({
       const nowFullscreen = !!document.fullscreenElement
       setIsFullscreen(nowFullscreen)
       
-      if (wasFullscreen && !nowFullscreen && examStarted) {
+      if (wasFullscreen && !nowFullscreen && examStarted && !isInitializingRef.current) {
         onFullscreenExit()
       }
     }
@@ -163,7 +169,7 @@ export function ExamLayout({
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <p className="text-sm text-gray-600">Peserta:</p>
               <p className="font-semibold text-gray-900">{siswaInfo.nama}</p>
-              <p className="text-sm text-gray-500">NISN: {siswaInfo.nisn}</p>
+              <p className="text-sm text-gray-500">NISN: {siswaInfo.nisn || '-'}</p>
             </div>
           )}
           
@@ -217,7 +223,7 @@ export function ExamLayout({
                 {siswaInfo ? (
                   <>
                     <p className="text-xs text-gray-500 truncate">{siswaInfo.nama}</p>
-                    <p className="text-xs text-gray-400 truncate">{siswaInfo.nisn}</p>
+                    <p className="text-xs text-gray-400 truncate">NISN: {siswaInfo.nisn || '-'}</p>
                   </>
                 ) : (
                   <p className="text-xs text-gray-500">Cerdas-CBT</p>

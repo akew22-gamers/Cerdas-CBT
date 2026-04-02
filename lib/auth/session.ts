@@ -10,6 +10,7 @@ export interface SessionUser {
   username: string
   nama: string | null
   role: 'super_admin' | 'guru' | 'siswa'
+  nisn?: string
 }
 
 export interface SessionData {
@@ -113,7 +114,8 @@ export async function getSession(): Promise<SessionData | null> {
       id: session.user_id,
       username,
       nama,
-      role: session.role
+      role: session.role,
+      ...(session.role === 'siswa' && { nisn: username })
     },
     token,
     expiresAt: new Date(session.expires_at)
