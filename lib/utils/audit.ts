@@ -23,6 +23,7 @@ export type AuditAction =
   | 'exam_restored'
   | 'setup_completed'
   | 'change_password'
+  | 'reset_data'
 
 export interface AuditLogInput {
   userId: string

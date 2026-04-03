@@ -4,6 +4,7 @@ import * as React from "react"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
 import { StatsCard } from "@/components/admin/StatsCard"
 import { PageHeader } from "@/components/layout/PageHeader"
+import { ResetDataDialog } from "@/components/admin/ResetDataDialog"
 import { Users, ClipboardList, FileCheck, BookOpen, UserPlus, Search, Settings, Sparkles, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -40,36 +41,37 @@ export default function AdminDashboard() {
   const [loading, setLoading] = React.useState(true)
   const [user, setUser] = React.useState<UserProfile>({ nama: "Super Admin", role: "super_admin" })
 
-  React.useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [statsRes, meRes] = await Promise.all([
-          fetch("/api/admin/dashboard"),
-          fetch("/api/auth/me")
-        ])
+  const fetchDashboardData = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const [statsRes, meRes] = await Promise.all([
+        fetch("/api/admin/dashboard"),
+        fetch("/api/auth/me")
+      ])
 
-        if (statsRes.ok) {
-          const statsData = await statsRes.json()
-          if (statsData.success) {
-            setStats(statsData.data)
-          }
+      if (statsRes.ok) {
+        const statsData = await statsRes.json()
+        if (statsData.success) {
+          setStats(statsData.data)
         }
-
-        if (meRes.ok) {
-          const meData = await meRes.json()
-          if (meData.success) {
-            setUser(meData.data.user)
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error)
-      } finally {
-        setLoading(false)
       }
-    }
 
-    fetchDashboardData()
+      if (meRes.ok) {
+        const meData = await meRes.json()
+        if (meData.success) {
+          setUser(meData.data.user)
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error)
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  React.useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -143,7 +145,7 @@ export default function AdminDashboard() {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Link href="/admin/guru/create">
                 <Button variant="outline" className="w-full justify-start gap-3 h-auto py-4 hover:bg-violet-50 hover:border-violet-200 group transition-all">
                   <div className="p-2 bg-violet-100 rounded-lg group-hover:bg-violet-200 transition-colors">
@@ -177,6 +179,7 @@ export default function AdminDashboard() {
                   </div>
                 </Button>
               </Link>
+              <ResetDataDialog onDataReset={fetchDashboardData} />
             </div>
           </CardContent>
         </Card>
