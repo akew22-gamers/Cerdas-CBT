@@ -59,7 +59,7 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
   // Pagination & Sorting state
   const [currentPage, setCurrentPage] = React.useState(1)
   const [itemsPerPage, setItemsPerPage] = React.useState(10)
-  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc')
+  const [sortKey, setSortKey] = React.useState<string>('nama_asc')
   
   // Bulk action state
   const [selectedIds, setSelectedIds] = React.useState<string[]>([])
@@ -68,11 +68,13 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
 
   const sortedList = React.useMemo(() => {
     return [...siswaList].sort((a, b) => {
-      const nameA = a.nama || ""
-      const nameB = b.nama || ""
-      return sortOrder === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA)
+      if (sortKey === 'nama_asc') return (a.nama || '').localeCompare(b.nama || '')
+      if (sortKey === 'nama_desc') return (b.nama || '').localeCompare(a.nama || '')
+      if (sortKey === 'nisn_asc') return (a.nisn || '').localeCompare(b.nisn || '')
+      if (sortKey === 'nisn_desc') return (b.nisn || '').localeCompare(a.nisn || '')
+      return 0
     })
-  }, [siswaList, sortOrder])
+  }, [siswaList, sortKey])
 
   const totalPages = Math.max(1, Math.ceil(sortedList.length / itemsPerPage))
   
@@ -173,13 +175,15 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-600">Urutkan:</span>
-            <Select value={sortOrder} onValueChange={(val) => setSortOrder(val as any)}>
-              <SelectTrigger className="w-[140px] h-9">
-                <SelectValue placeholder="Pilih..." />
+            <Select value={sortKey} onValueChange={(val) => { if (val) setSortKey(val) }}>
+              <SelectTrigger className="w-[160px] h-9">
+                <SelectValue placeholder="Urutan..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="asc">Nama (A-Z)</SelectItem>
-                <SelectItem value="desc">Nama (Z-A)</SelectItem>
+                <SelectItem value="nama_asc">Nama (A-Z)</SelectItem>
+                <SelectItem value="nama_desc">Nama (Z-A)</SelectItem>
+                <SelectItem value="nisn_asc">NISN (A-Z)</SelectItem>
+                <SelectItem value="nisn_desc">NISN (Z-A)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -222,7 +226,7 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
               <TableHead className="text-slate-600 font-semibold">
                 <div 
                   className="flex items-center gap-1 cursor-pointer hover:text-slate-900 select-none"
-                  onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                  onClick={() => setSortKey(prev => prev === 'nama_asc' ? 'nama_desc' : 'nama_asc')}
                 >
                   Nama
                   <ArrowUpDown className="w-3 h-3" />
