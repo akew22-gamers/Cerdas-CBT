@@ -83,7 +83,7 @@ export function Header({ user, className }: HeaderProps) {
     <>
       <header
         className={cn(
-          "bg-white border-b border-slate-200/80 h-16 flex items-center justify-end px-4 lg:px-6 w-full sticky top-0 z-20",
+          "bg-white border-b border-slate-200/80 h-16 flex items-center justify-end px-4 lg:px-6 w-full flex-shrink-0",
           "shadow-sm shadow-slate-100/50",
           className
         )}

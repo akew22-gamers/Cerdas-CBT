@@ -29,13 +29,13 @@ export function DashboardLayout({ children, user, className }: DashboardLayoutPr
   const role = getUserRole(user.role)
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
       <Sidebar role={role} />
       
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden lg:ml-64">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <Header user={user} />
         
-        <main className={cn("flex-1 bg-slate-50 p-4 lg:p-8 overflow-auto", className)}>
+        <main className={cn("flex-1 bg-slate-50 p-4 lg:p-8 overflow-y-auto", className)}>
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
