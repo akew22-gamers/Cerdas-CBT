@@ -18,26 +18,26 @@ export function StatsCard({ icon, label, value, trend, highlight, gradient, clas
   return (
     <div
       className={cn(
-        "bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm",
-        "flex flex-col justify-center gap-3",
+        "bg-white p-4 sm:p-6 rounded-xl border border-slate-200/80 shadow-sm",
+        "flex flex-col justify-center gap-2 sm:gap-3",
         "hover:shadow-md hover:border-slate-300 transition-all duration-200",
         highlight && "ring-1 ring-amber-200/50",
         className
       )}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <div className={cn(
-          "p-2 rounded-lg",
+          "p-1.5 sm:p-2 rounded-lg",
           gradient ? `bg-gradient-to-br ${gradient} text-white shadow-lg` : "bg-slate-100 text-slate-600"
         )}>
           {icon}
         </div>
-        <span className="text-sm font-medium text-slate-500">
+        <span className="text-xs sm:text-sm font-medium text-slate-500">
           {label}
         </span>
       </div>
       <div className="flex items-end justify-between">
-        <span className="text-3xl font-bold text-slate-900">
+        <span className="text-2xl sm:text-3xl font-bold text-slate-900">
           {value}
         </span>
         {trend && (
