@@ -97,11 +97,11 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
 
-      <div className="space-y-8">
+      <div className="space-y-4">
         <FormSection title="Informasi Utama" icon={School}>
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               id="nama_sekolah"
               label="Nama Sekolah"
@@ -123,7 +123,7 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
               disabled={isLoading || readOnly}
             />
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 mt-6">
+          <div className="grid gap-4 sm:grid-cols-2 mt-4">
             <FormField
               id="npsn"
               label="NPSN"
@@ -146,7 +146,7 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
         </FormSection>
 
         <FormSection title="Kontak" icon={Phone}>
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               id="telepon"
               label="Telepon"
@@ -167,7 +167,7 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
               disabled={isLoading || readOnly}
             />
           </div>
-          <div className="mt-6">
+          <div className="mt-4">
             <FormField
               id="website"
               label="Website"
@@ -223,7 +223,7 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
       </div>
 
       {!readOnly && (
-        <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
           <Button 
             type="submit" 
             disabled={isLoading}
@@ -258,12 +258,12 @@ function FormSection({
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+    <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
         <Icon className="h-4 w-4 text-violet-600" />
-        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
       </div>
-      <div className="pt-2">
+      <div className="pt-1">
         {children}
       </div>
     </div>
@@ -294,7 +294,7 @@ function FormField({
   hint?: string
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <Label htmlFor={id} className="flex items-center gap-2 text-slate-700">
         <Icon className="h-4 w-4 text-slate-400" />
         {label}
@@ -332,8 +332,8 @@ function TextareaField({
   disabled?: boolean
 }) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-slate-700">{label}</Label>
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-slate-700 text-sm">{label}</Label>
       <Textarea
         id={id}
         name={id}
@@ -341,7 +341,7 @@ function TextareaField({
         value={value}
         onChange={onChange}
         disabled={disabled}
-        rows={3}
+        rows={2}
         className="border-slate-200 focus:border-violet-400 focus:ring-violet-400/20 resize-none"
       />
     </div>

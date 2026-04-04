@@ -63,7 +63,7 @@ export function SekolahDisplay({ data }: SekolahDisplayProps) {
               <DialogTrigger render={<Button className="bg-violet-600 hover:bg-violet-700 text-white" />}>
                 <Edit3 className="mr-2 h-4 w-4" /> Lengkapi Data Sekolah
               </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-6">
                 <DialogHeader>
                   <DialogTitle className="text-xl">Lengkapi Informasi Sekolah</DialogTitle>
                   <DialogDescription>
@@ -91,7 +91,7 @@ export function SekolahDisplay({ data }: SekolahDisplayProps) {
                   <Edit3 className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Edit Data</span>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-6">
                   <DialogHeader>
                     <DialogTitle className="text-xl">Edit Informasi Sekolah</DialogTitle>
                     <DialogDescription>
