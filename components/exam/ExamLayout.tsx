@@ -138,8 +138,8 @@ export function ExamLayout({
                 <h1 className="text-xs sm:text-sm font-semibold text-gray-900 truncate">Ujian Berbasis Komputer</h1>
                 {siswaInfo ? (
                   <>
-                    <p className="text-xs text-gray-500 truncate">{siswaInfo.nama}</p>
-                    <p className="text-xs text-gray-400 truncate">NISN: {siswaInfo.nisn || '-'}</p>
+                    <p className="text-xs text-slate-500 truncate">{siswaInfo.nama}</p>
+                    <p className="text-[11px] text-slate-400 truncate">NISN: {siswaInfo.nisn || '-'}</p>
                   </>
                 ) : (
                   <p className="text-xs text-gray-500">Cerdas-CBT</p>
@@ -147,32 +147,22 @@ export function ExamLayout({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-4 md:gap-6">
-              {!isFullscreen && document.fullscreenEnabled && (
-                <button
-                  onClick={enterFullscreen}
-                  className="hidden sm:flex items-center gap-1 px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-medium rounded transition-colors"
-                  title="Klik untuk masuk fullscreen"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                  </svg>
-                  Fullscreen
-                </button>
-              )}
+            <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
               <div className="text-center">
-                <p className="text-xs text-gray-500 mb-0.5 hidden sm:block">Waktu Tersisa</p>
+                <p className="text-[10px] sm:text-xs text-slate-500 mb-0.5 font-medium uppercase tracking-wider hidden sm:block">Sisa Waktu</p>
                 {timer}
               </div>
               <div className="text-center hidden md:block">
-                <p className="text-xs text-gray-500 mb-0.5">Progress</p>
-                <p className="text-sm font-semibold text-gray-900">{progress}</p>
+                <p className="text-[10px] sm:text-xs text-slate-500 mb-0.5 font-medium uppercase tracking-wider">Progress</p>
+                <div className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+                  {progress}
+                </div>
               </div>
               <button
                 onClick={onSubmit}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+                className="px-3 sm:px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-[11px] sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-sm shadow-emerald-500/25 transition-all whitespace-nowrap active:scale-[0.98]"
               >
-                Kirim Jawaban
+                Selesai
               </button>
             </div>
           </div>

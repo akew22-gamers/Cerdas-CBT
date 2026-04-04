@@ -49,13 +49,13 @@ export function QuestionDisplay({
   }, [teksSoal, questionNumber])
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 md:p-8">
-      <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
-        <span className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-base sm:text-lg">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 md:p-8">
+      <div className="flex items-start gap-4 mb-4 sm:mb-6">
+        <span className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl shadow-sm shadow-blue-500/25 flex items-center justify-center font-bold text-sm sm:text-lg">
           {questionNumber}
         </span>
-        <div id={`question-content-${questionNumber}`} className="flex-1">
-          <p className="text-gray-900 text-base sm:text-lg leading-relaxed whitespace-pre-wrap">
+        <div id={`question-content-${questionNumber}`} className="flex-1 mt-0.5 sm:mt-1">
+          <p className="text-slate-800 text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
             {teksSoal}
           </p>
         </div>
@@ -71,31 +71,33 @@ export function QuestionDisplay({
         </div>
       )}
 
-      <div className="space-y-2 sm:space-y-3 ml-11 sm:ml-14">
+      <div className="space-y-3 pl-0 sm:ml-14">
         {options.map((option) => (
           <button
             key={option.label}
             onClick={() => onAnswerChange(option.text)}
             className={`
-              w-full text-left p-3 sm:p-4 rounded-lg border-2 transition-all duration-200
+              w-full text-left p-3.5 sm:p-4 rounded-xl border-2 transition-all duration-200
               flex items-center gap-3 sm:gap-4
-              touch-manipulation
+              touch-manipulation outline-none active:scale-[0.99]
               ${selectedAnswer === option.text
-                ? 'border-blue-600 bg-blue-50 shadow-md'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                ? 'border-blue-500 bg-blue-50/50 shadow-sm'
+                : 'border-slate-100 bg-white hover:border-slate-300 hover:bg-slate-50'
               }
             `}
           >
             <span className={`
-              w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm flex-shrink-0
+              w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm flex-shrink-0 transition-colors
               ${selectedAnswer === option.text
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700'
+                ? 'bg-blue-500 text-white shadow-sm'
+                : 'bg-slate-100 text-slate-500 border border-slate-200'
               }
             `}>
               {option.label}
             </span>
-            <span className="text-gray-900 flex-1 text-sm sm:text-base">{option.text}</span>
+            <span className={`flex-1 text-sm sm:text-base leading-snug ${selectedAnswer === option.text ? 'text-blue-900 font-medium' : 'text-slate-700'}`}>
+              {option.text}
+            </span>
           </button>
         ))}
       </div>

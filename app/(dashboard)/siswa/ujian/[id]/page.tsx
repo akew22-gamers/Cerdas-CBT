@@ -328,20 +328,26 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
             />
           )}
 
-          <div className="flex items-center justify-between mt-6">
+          <div className="flex gap-3 w-full mt-6">
             <button
               onClick={() => setCurrentQuestion((q) => Math.max(1, q - 1))}
               disabled={currentQuestion === 1}
-              className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-3.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              ← Sebelumnya
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Sebelumnya</span>
             </button>
             <button
               onClick={() => setCurrentQuestion((q) => Math.min(soalList.length, q + 1))}
               disabled={currentQuestion === soalList.length}
-              className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-3.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm shadow-blue-500/25 active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              Berikutnya →
+              <span>Selanjutnya</span>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </div>
