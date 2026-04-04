@@ -129,20 +129,14 @@ export function Header({ user, className }: HeaderProps) {
             <DropdownMenuGroup>
               <DropdownMenuItem 
                 className="cursor-pointer py-2.5 px-4 hover:bg-slate-50"
-                onSelect={(e) => {
-                  e.preventDefault()
-                  setShowProfile(true)
-                }}
+                onClick={() => setShowProfile(true)}
               >
                 <User className="mr-3 h-4 w-4 text-slate-500" />
                 <span>Profil</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="cursor-pointer py-2.5 px-4 hover:bg-slate-50"
-                onSelect={(e) => {
-                  e.preventDefault()
-                  setShowSettings(true)
-                }}
+                onClick={() => setShowSettings(true)}
               >
                 <Settings className="mr-3 h-4 w-4 text-slate-500" />
                 <span>Pengaturan</span>
