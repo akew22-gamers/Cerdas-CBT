@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SessionProvider } from "@/components/auth/SessionProvider";
+import { Providers } from "@/components/providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={cn(inter.variable)}>
+    <html lang="id" className={cn(inter.variable, "light")}>
       <head>
         <link
           rel="stylesheet"
@@ -33,9 +34,11 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased font-sans">
-        <SessionProvider>
-          {children}
-        </SessionProvider>
+        <Providers>
+          <SessionProvider>
+            {children}
+          </SessionProvider>
+        </Providers>
         <Toaster richColors position="top-right" />
       </body>
     </html>
