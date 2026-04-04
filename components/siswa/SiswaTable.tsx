@@ -173,7 +173,7 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-600">Urutkan:</span>
-            <Select value={sortOrder} onValueChange={(val: any) => setSortOrder(val)}>
+            <Select value={sortOrder} onValueChange={(val) => setSortOrder(val as any)}>
               <SelectTrigger className="w-[140px] h-9">
                 <SelectValue placeholder="Pilih..." />
               </SelectTrigger>
@@ -185,9 +185,11 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-600">Tampilkan:</span>
-            <Select value={itemsPerPage.toString()} onValueChange={(val: string) => {
-              setItemsPerPage(Number(val))
-              setCurrentPage(1)
+            <Select value={itemsPerPage.toString()} onValueChange={(val) => {
+              if (val) {
+                setItemsPerPage(Number(val))
+                setCurrentPage(1)
+              }
             }}>
               <SelectTrigger className="w-[80px] h-9">
                 <SelectValue placeholder="10" />
