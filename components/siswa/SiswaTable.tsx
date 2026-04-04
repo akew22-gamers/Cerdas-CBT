@@ -22,7 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Trash2, GraduationCap, School } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Trash2, GraduationCap, School, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { ResetPasswordDialog } from "./ResetPasswordDialog"
 import { EditSiswaDialog } from "./EditSiswaDialog"
 
@@ -50,9 +51,54 @@ interface SiswaTableProps {
 
 export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableProps) {
   const router = useRouter()
+  // Single delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [selectedSiswa, setSelectedSiswa] = React.useState<Siswa | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
+
+  // Pagination & Sorting state
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [itemsPerPage, setItemsPerPage] = React.useState(10)
+  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc')
+  
+  // Bulk action state
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([])
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = React.useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = React.useState(false)
+
+  const sortedList = React.useMemo(() => {
+    return [...siswaList].sort((a, b) => {
+      const nameA = a.nama || ""
+      const nameB = b.nama || ""
+      return sortOrder === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA)
+    })
+  }, [siswaList, sortOrder])
+
+  const totalPages = Math.max(1, Math.ceil(sortedList.length / itemsPerPage))
+  
+  const paginatedList = React.useMemo(() => {
+    return sortedList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  }, [sortedList, currentPage, itemsPerPage])
+
+  React.useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [totalPages, currentPage])
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(paginatedList.map(s => s.id))
+    } else {
+      setSelectedIds([])
+    }
+  }
+
+  const handleSelectRow = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds(prev => [...prev, id])
+    } else {
+      setSelectedIds(prev => prev.filter(x => x !== id))
+    }
+  }
 
   const handleDeleteClick = (siswa: Siswa) => {
     setSelectedSiswa(siswa)
@@ -61,25 +107,18 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
 
   const handleDeleteConfirm = async () => {
     if (!selectedSiswa) return
-
     setIsDeleting(true)
-
     try {
-      const response = await fetch(`/api/guru/siswa/${selectedSiswa.id}`, {
-        method: "DELETE",
-      })
-
+      const response = await fetch(`/api/guru/siswa/${selectedSiswa.id}`, { method: "DELETE" })
       const result = await response.json()
-
-      if (!result.success) {
-        throw new Error(result.error?.message || "Gagal menghapus siswa")
-      }
-
+      if (!result.success) throw new Error(result.error?.message || "Gagal menghapus siswa")
+      
       toast.success("Siswa berhasil dihapus")
+      // Remove from selectedIds if present
+      setSelectedIds(prev => prev.filter(id => id !== selectedSiswa.id))
       onRefresh?.() || router.refresh()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Gagal menghapus siswa"
-      toast.error(errorMessage)
+      toast.error(error instanceof Error ? error.message : "Gagal menghapus siswa")
     } finally {
       setIsDeleting(false)
       setDeleteDialogOpen(false)
@@ -87,27 +126,114 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
     }
   }
 
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedIds.length === 0) return
+    setIsBulkDeleting(true)
+    try {
+      for (const id of selectedIds) {
+        const response = await fetch(`/api/guru/siswa/${id}`, { method: "DELETE" })
+        const result = await response.json()
+        if (!result.success) throw new Error(result.error?.message || "Gagal menghapus sebagian siswa")
+      }
+      toast.success(`${selectedIds.length} Siswa berhasil dihapus`)
+      setSelectedIds([])
+      onRefresh?.() || router.refresh()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal menghapus kumpulan data siswa")
+    } finally {
+      setIsBulkDeleting(false)
+      setBulkDeleteDialogOpen(false)
+    }
+  }
+
   const handlePasswordReset = () => {
     onRefresh?.() || router.refresh()
   }
 
+  const isAllOnPageSelected = paginatedList.length > 0 && paginatedList.every(s => selectedIds.includes(s.id))
+
   return (
-    <>
-      <div className="rounded-xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-2">
+          {selectedIds.length > 0 ? (
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setBulkDeleteDialogOpen(true)}
+            >
+              <Trash2 className="w-4 h-4" />
+              Hapus Terpilih ({selectedIds.length})
+            </Button>
+          ) : (
+            <span className="text-sm text-slate-500 font-medium">Total: {sortedList.length} Siswa</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-600">Urutkan:</span>
+            <Select value={sortOrder} onValueChange={(val: any) => setSortOrder(val)}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Pilih..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asc">Nama (A-Z)</SelectItem>
+                <SelectItem value="desc">Nama (Z-A)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-600">Tampilkan:</span>
+            <Select value={itemsPerPage.toString()} onValueChange={(val: string) => {
+              setItemsPerPage(Number(val))
+              setCurrentPage(1)
+            }}>
+              <SelectTrigger className="w-[80px] h-9">
+                <SelectValue placeholder="10" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200/80 bg-white shadow-sm overflow-hidden overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+              <TableHead className="w-12 text-center text-slate-600">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  checked={isAllOnPageSelected}
+                  onChange={handleSelectAll}
+                />
+              </TableHead>
               <TableHead className="w-16 text-slate-600 font-semibold">No</TableHead>
               <TableHead className="text-slate-600 font-semibold">NISN</TableHead>
-              <TableHead className="text-slate-600 font-semibold">Nama</TableHead>
+              <TableHead className="text-slate-600 font-semibold">
+                <div 
+                  className="flex items-center gap-1 cursor-pointer hover:text-slate-900 select-none"
+                  onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                >
+                  Nama
+                  <ArrowUpDown className="w-3 h-3" />
+                </div>
+              </TableHead>
               <TableHead className="text-slate-600 font-semibold">Kelas</TableHead>
               <TableHead className="w-48 text-slate-600 font-semibold">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {siswaList.length === 0 ? (
+            {paginatedList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-12 text-slate-400">
+                <TableCell colSpan={6} className="text-center py-12 text-slate-400">
                   <div className="flex flex-col items-center gap-2">
                     <GraduationCap className="w-8 h-8 text-slate-300" />
                     <p>Belum ada data siswa</p>
@@ -115,60 +241,131 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
                 </TableCell>
               </TableRow>
             ) : (
-              siswaList.map((siswa, index) => (
-                <TableRow key={siswa.id} className="hover:bg-slate-50/50 transition-colors">
-                  <TableCell className="font-medium text-slate-600">{index + 1}</TableCell>
-                  <TableCell className="text-slate-900 font-medium">{siswa.nisn}</TableCell>
-                  <TableCell className="text-slate-900">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-semibold">
-                        {siswa.nama?.substring(0, 2).toUpperCase() || "SW"}
-                      </div>
-                      {siswa.nama}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {siswa.kelas ? (
-                      <div className="flex items-center gap-1.5">
-                        <School className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="px-2 py-0.5 bg-slate-100 rounded-md text-xs font-medium text-slate-700">
-                          {siswa.kelas.nama_kelas}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-slate-400 text-sm">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <EditSiswaDialog
-                        siswa={siswa}
-                        kelasList={kelasList || []}
-                        onUpdated={onRefresh}
+              paginatedList.map((siswa, index) => {
+                const globalIndex = (currentPage - 1) * itemsPerPage + index + 1
+                return (
+                  <TableRow key={siswa.id} className="hover:bg-slate-50/50 transition-colors">
+                    <TableCell className="text-center">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        checked={selectedIds.includes(siswa.id)}
+                        onChange={(e) => handleSelectRow(siswa.id, e.target.checked)}
                       />
-                      <ResetPasswordDialog
-                        siswaId={siswa.id}
-                        siswaNama={siswa.nama}
-                        onPasswordReset={handlePasswordReset}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteClick(siswa)}
-                        title="Hapus"
-                        className="hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell className="font-medium text-slate-600">{globalIndex}</TableCell>
+                    <TableCell className="text-slate-900 font-medium">{siswa.nisn}</TableCell>
+                    <TableCell className="text-slate-900">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-semibold">
+                          {siswa.nama?.substring(0, 2).toUpperCase() || "SW"}
+                        </div>
+                        {siswa.nama}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {siswa.kelas ? (
+                        <div className="flex items-center gap-1.5">
+                          <School className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="px-2 py-0.5 bg-slate-100 rounded-md text-xs font-medium text-slate-700 whitespace-nowrap">
+                            {siswa.kelas.nama_kelas}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 text-sm">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <EditSiswaDialog
+                          siswa={siswa}
+                          kelasList={kelasList || []}
+                          onUpdated={onRefresh}
+                        />
+                        <ResetPasswordDialog
+                          siswaId={siswa.id}
+                          siswaNama={siswa.nama}
+                          onPasswordReset={handlePasswordReset}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteClick(siswa)}
+                          title="Hapus"
+                          className="hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>
+        
+        {/* Pagination Controls */}
+        {sortedList.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50 sm:px-6">
+            <div className="hidden sm:block">
+              <p className="text-sm text-slate-700">
+                Menampilkan <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> sampai <span className="font-medium">{Math.min(currentPage * itemsPerPage, sortedList.length)}</span> dari <span className="font-medium">{sortedList.length}</span> data
+              </p>
+            </div>
+            <div className="flex flex-1 justify-between sm:justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="gap-1 h-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Sebelumnya</span>
+              </Button>
+              <div className="flex justify-center items-center px-3 text-sm font-medium text-slate-700 sm:hidden">
+                Hal {currentPage} / {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="gap-1 h-8"
+              >
+                <span className="hidden sm:inline">Selanjutnya</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Bulk Delete Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent className="border-slate-200">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-slate-900">Hapus Data Terpilih</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500">
+              Apakah Anda yakin ingin menghapus <span className="font-bold text-slate-700">{selectedIds.length}</span> siswa terpilih?
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting} className="border-slate-200">Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDeleteConfirm}
+              disabled={isBulkDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isBulkDeleting ? "Menghapus..." : "Hapus Semua"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Single Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="border-slate-200">
           <AlertDialogHeader>
@@ -190,6 +387,6 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   )
 }

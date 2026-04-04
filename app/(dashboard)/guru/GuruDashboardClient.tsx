@@ -237,29 +237,29 @@ export function GuruDashboardClient({ initialData, ujianIds, user }: GuruDashboa
           <CardHeader>
             <CardTitle>Akses Cepat</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Link href="/guru/kelas/create">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Plus className="w-4 h-4" />
-                Tambah Kelas Baru
+          <CardContent className="grid grid-cols-2 gap-3">
+            <Link href="/guru/kelas/create" className="col-span-1">
+              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3 px-4 shadow-sm hover:border-violet-300 hover:bg-violet-50 transition-all font-medium text-slate-700 hover:text-violet-700">
+                <Plus className="w-4 h-4 text-violet-600" />
+                <span className="flex-1 text-left text-sm whitespace-normal">Tambah Kelas</span>
               </Button>
             </Link>
-            <Link href="/guru/siswa/create">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Plus className="w-4 h-4" />
-                Tambah Siswa Baru
+            <Link href="/guru/siswa/create" className="col-span-1">
+              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3 px-4 shadow-sm hover:border-emerald-300 hover:bg-emerald-50 transition-all font-medium text-slate-700 hover:text-emerald-700">
+                <Plus className="w-4 h-4 text-emerald-600" />
+                <span className="flex-1 text-left text-sm whitespace-normal">Tambah Siswa</span>
               </Button>
             </Link>
-            <Link href="/guru/ujian">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <FileText className="w-4 h-4" />
-                Kelola Ujian
+            <Link href="/guru/ujian" className="col-span-1">
+              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3 px-4 shadow-sm hover:border-amber-300 hover:bg-amber-50 transition-all font-medium text-slate-700 hover:text-amber-700">
+                <FileText className="w-4 h-4 text-amber-600" />
+                <span className="flex-1 text-left text-sm whitespace-normal">Kelola Ujian</span>
               </Button>
             </Link>
-            <Link href="/guru/hasil">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <FileText className="w-4 h-4" />
-                Lihat Hasil Ujian
+            <Link href="/guru/hasil" className="col-span-1">
+              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3 px-4 shadow-sm hover:border-blue-300 hover:bg-blue-50 transition-all font-medium text-slate-700 hover:text-blue-700">
+                <Activity className="w-4 h-4 text-blue-600" />
+                <span className="flex-1 text-left text-sm whitespace-normal">Hasil Ujian</span>
               </Button>
             </Link>
           </CardContent>
