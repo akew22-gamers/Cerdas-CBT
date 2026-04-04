@@ -128,14 +128,15 @@ export function Sidebar({ role, className }: SidebarProps) {
 
       <aside
         className={cn(
-          "w-64 bg-white border-r border-slate-200/80 min-h-screen flex flex-col",
-          "fixed lg:static inset-y-0 left-0 z-40",
+          "w-64 bg-white border-r border-slate-200/80 flex flex-col",
+          "fixed inset-y-0 left-0 z-40",
           "transition-transform duration-300 ease-out",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          "h-screen",
           className
         )}
       >
-        <div className="flex items-center gap-3 p-5 border-b border-slate-200/80">
+        <div className="flex items-center gap-3 p-5 border-b border-slate-200/80 flex-shrink-0">
           <div className="relative">
             <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} rounded-xl blur-md opacity-60`} />
             <div className="relative h-9 w-9 flex items-center justify-center bg-white rounded-xl shadow-sm border border-slate-100">
@@ -193,7 +194,7 @@ export function Sidebar({ role, className }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-200/80">
+        <div className="p-4 border-t border-slate-200/80 flex-shrink-0">
           <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-[10px] text-slate-400 text-center font-medium">
               © 2026 Cerdas-CBT

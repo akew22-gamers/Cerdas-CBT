@@ -32,7 +32,7 @@ export function DashboardLayout({ children, user, className }: DashboardLayoutPr
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar role={role} />
       
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden lg:ml-0">
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden lg:ml-64">
         <Header user={user} />
         
         <main className={cn("flex-1 bg-slate-50 p-4 lg:p-8 overflow-auto", className)}>
