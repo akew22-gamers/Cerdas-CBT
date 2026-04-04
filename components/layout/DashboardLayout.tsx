@@ -10,9 +10,11 @@ type UserRole = "super_admin" | "guru" | "siswa"
 interface DashboardLayoutProps {
   children: React.ReactNode
   user: {
+    id?: string
     nama: string | null
     username?: string
     role: string
+    nisn?: string
   }
   className?: string
 }
