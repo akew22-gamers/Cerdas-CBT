@@ -160,7 +160,12 @@ const styles = StyleSheet.create({
     fontSize: 5.5,
     fontWeight: 'normal',
     color: '#000000',
-    width: 40,
+    width: 20,
+  },
+  infoColon: {
+    fontSize: 5.5,
+    color: '#000000',
+    width: 5,
   },
   infoValue: {
     fontSize: 5.5,
@@ -236,9 +241,7 @@ function ExamCard({
           {sekolah.logo_url && sekolah.logo_url.startsWith('data:') ? (
             <Image src={sekolah.logo_url} style={styles.logo} />
           ) : (
-            <View style={styles.logoPlaceholder}>
-              <Text style={{ fontSize: 5, color: '#666' }}>LOGO</Text>
-            </View>
+            <Image src="/images/logo_kemendikdasmen.svg" style={styles.logo} />
           )}
         </View>
         <View style={styles.headerText}>
@@ -256,15 +259,18 @@ function ExamCard({
           <View style={{ marginBottom: 3 }}>
             <Text style={styles.sectionTitle}>DATA PESERTA</Text>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Nama  :</Text>
+              <Text style={styles.infoLabel}>Nama</Text>
+              <Text style={styles.infoColon}>:</Text>
               <Text style={styles.infoValue}>{truncateText(siswa.nama.toUpperCase(), 25)}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>NISN  :</Text>
+              <Text style={styles.infoLabel}>NISN</Text>
+              <Text style={styles.infoColon}>:</Text>
               <Text style={styles.infoValue}>{siswa.nisn}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Kelas :</Text>
+              <Text style={styles.infoLabel}>Kelas</Text>
+              <Text style={styles.infoColon}>:</Text>
               <Text style={styles.infoValue}>{(siswa.kelas?.nama_kelas || '-').toUpperCase()}</Text>
             </View>
           </View>
@@ -274,11 +280,13 @@ function ExamCard({
           <View style={{ marginTop: 2 }}>
             <Text style={styles.sectionTitle}>INFORMASI UJIAN</Text>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Ujian :</Text>
+              <Text style={styles.infoLabel}>Ujian</Text>
+              <Text style={styles.infoColon}>:</Text>
               <Text style={styles.infoValue}>{truncateText(ujian.judul.toUpperCase(), 28)}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Kode  :</Text>
+              <Text style={styles.infoLabel}>Kode</Text>
+              <Text style={styles.infoColon}>:</Text>
               <Text style={styles.infoValue}>{ujian.kode_ujian}</Text>
             </View>
           </View>

@@ -46,7 +46,7 @@ export function UjianLoginPage({ schoolName, ujianId, siswaId, kodeUjian }: Ujia
 
   const onScanSuccess = useCallback((decodedText: string) => {
     try {
-      const url = new URL(decodedText)
+      const url = new URL(decodedText, window.location.origin)
       const params = url.searchParams
       
       const uId = params.get('u')
