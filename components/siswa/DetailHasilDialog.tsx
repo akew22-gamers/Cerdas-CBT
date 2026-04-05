@@ -41,13 +41,20 @@ interface HasilDetail {
   is_submitted: boolean
 }
 
-function formatDateTime(dateString: string | null): string {
+function formatDate(dateString: string | null): string {
   if (!dateString) return '-'
   const date = new Date(dateString)
-  return date.toLocaleString('id-ID', {
+  return date.toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'long',
-    year: 'numeric',
+    year: 'numeric'
+  })
+}
+
+function formatTime(dateString: string | null): string {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleTimeString('id-ID', {
     hour: '2-digit',
     minute: '2-digit'
   })
@@ -205,7 +212,7 @@ export function DetailHasilDialog({ open, onOpenChange, hasilId }: DetailHasilDi
                 <div className="flex-1">
                   <p className="text-xs text-slate-500">Tanggal Ujian</p>
                   <p className="font-medium text-slate-900">
-                    {formatDateTime(data.waktu_mulai).split(',')[0]}
+                    {formatDate(data.waktu_mulai)}
                   </p>
                 </div>
               </div>
@@ -217,7 +224,7 @@ export function DetailHasilDialog({ open, onOpenChange, hasilId }: DetailHasilDi
                 <div className="flex-1">
                   <p className="text-xs text-slate-500">Waktu Mulai</p>
                   <p className="font-medium text-slate-900">
-                    {formatDateTime(data.waktu_mulai).split(',')[1]?.trim() || '-'}
+                    {formatTime(data.waktu_mulai)}
                   </p>
                 </div>
               </div>
@@ -229,7 +236,7 @@ export function DetailHasilDialog({ open, onOpenChange, hasilId }: DetailHasilDi
                 <div className="flex-1">
                   <p className="text-xs text-slate-500">Waktu Selesai</p>
                   <p className="font-medium text-slate-900">
-                    {formatDateTime(data.waktu_selesai).split(',')[1]?.trim() || '-'}
+                    {formatTime(data.waktu_selesai)}
                   </p>
                 </div>
               </div>
