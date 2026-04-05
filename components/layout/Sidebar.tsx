@@ -101,7 +101,7 @@ export function Sidebar({ role, className }: SidebarProps) {
     return pathname.startsWith(href)
   }
 
-  const SidebarContent = () => (
+  const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo Section - Compact on mobile */}
       <div className="flex items-center gap-2.5 p-4 border-b border-slate-200/80 shrink-0">
@@ -241,7 +241,7 @@ export function Sidebar({ role, className }: SidebarProps) {
           className
         )}
       >
-        <SidebarContent />
+        {sidebarContent}
       </aside>
 
       {/* Mobile Sidebar - Slide-in drawer */}
@@ -251,7 +251,7 @@ export function Sidebar({ role, className }: SidebarProps) {
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <SidebarContent />
+        {sidebarContent}
       </div>
     </>
   )
