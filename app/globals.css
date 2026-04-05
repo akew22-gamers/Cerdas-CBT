@@ -58,3 +58,432 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@layer utilities {
+  
+  /* =========================================================================
+   * MICRO-INTERACTIONS
+   * ========================================================================= */
+  
+  /* Hover lift effect - Cards, buttons */
+  .hover-lift {
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Press effect - Buttons, interactive elements */
+  .press-effect {
+    @apply transition-transform duration-150;
+  }
+  
+  .press-effect:active {
+    transform: scale(0.97);
+  }
+  
+  /* Ripple effect container */
+  .ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+  
+  .ripple:active::after {
+    width: 300px;
+    height: 300px;
+  }
+  
+  /* Gradient shift on hover */
+  .gradient-shift {
+    background-size: 200% 200%;
+    transition: background-position 0.3s ease;
+  }
+  
+  .gradient-shift:hover {
+    background-position: right center;
+  }
+  
+  /* =========================================================================
+   * LOADING ANIMATIONS
+   * ========================================================================= */
+  
+  /* Pulse animation - Loading placeholders */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  /* Slow pulse - Subtle live indicators */
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  /* Shimmer effect - Loading cards, tables */
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+    background: linear-gradient(
+      to right,
+      #f1f5f9 0%,
+      #e2e8f0 50%,
+      #f1f5f9 100%
+    );
+    background-size: 1000px 100%;
+  }
+  
+  /* Fade in animation - Page transitions, modals */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+  
+  /* Fade in up - Cards, list items */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in-up {
+    animation: fadeInUp 0.3s ease-out;
+  }
+  
+  /* Slide in from right - Mobile drawer */
+  @keyframes slideInRight {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  /* Scale in - Modals, dialogs */
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+  
+  /* Spin - Loading spinners */
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+  
+  /* Bounce - Notification dots, loading */
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  
+  .animate-bounce {
+    animation: bounce 1s ease-in-out infinite;
+  }
+  
+  /* Ping - Live indicators, notifications */
+  @keyframes ping {
+    75%, 100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+  
+  .animate-ping {
+    animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  
+  /* =========================================================================
+   * LOADING SKELETON PATTERNS
+   * ========================================================================= */
+  
+  /* Skeleton base */
+  .skeleton {
+    @apply bg-slate-200 rounded;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    transform: translateX(-100%);
+    animation: shimmer 2s infinite;
+  }
+  
+  /* Skeleton text lines */
+  .skeleton-text {
+    @apply h-4 w-full;
+  }
+  
+  .skeleton-text-sm {
+    @apply h-3 w-2/3;
+  }
+  
+  .skeleton-title {
+    @apply h-6 w-3/4;
+  }
+  
+  /* Skeleton circle (avatar) */
+  .skeleton-circle {
+    @apply rounded-full;
+  }
+  
+  /* Skeleton card */
+  .skeleton-card {
+    @apply bg-white rounded-xl border border-slate-200/80 p-4;
+  }
+  
+  /* =========================================================================
+   * SCROLL & OVERFLOW
+   * ========================================================================= */
+  
+  /* Custom scrollbar - Webkit */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+  }
+  
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* =========================================================================
+   * SAFE AREA (Mobile notched devices)
+   * ========================================================================= */
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* =========================================================================
+   * TEXT UTILITIES
+   * ========================================================================= */
+  
+  /* Line clamp utilities */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+  
+  /* Font smoothing */
+  .antialiased {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* =========================================================================
+   * FOCUS STATES (Accessibility)
+   * ========================================================================= */
+  
+  .focus-visible-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+  }
+  
+  .focus-visible-ring-primary {
+    @apply focus-visible:ring-blue-500;
+  }
+  
+  .focus-visible-ring-ring {
+    @apply focus-visible:ring-ring;
+  }
+  
+  /* =========================================================================
+   * TRANSITION UTILITIES
+   * ========================================================================= */
+  
+  .transition-all-fast {
+    @apply transition-all duration-150 ease-out;
+  }
+  
+  .transition-all-normal {
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  .transition-all-slow {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .transition-colors-fast {
+    @apply transition-colors duration-150 ease-out;
+  }
+  
+  .transition-colors-normal {
+    @apply transition-colors duration-200 ease-out;
+  }
+  
+  .transition-transform-fast {
+    @apply transition-transform duration-150 ease-out;
+  }
+  
+  .transition-transform-normal {
+    @apply transition-transform duration-200 ease-out;
+  }
+}
+
+@layer components {
+  
+  /* =========================================================================
+   * COMPONENT VARIANTS
+   * ========================================================================= */
+  
+  /* Card with hover lift */
+  .card-lift {
+    @apply bg-white rounded-xl border border-slate-200/80 shadow-sm hover-lift hover:shadow-md;
+  }
+  
+  /* Button press effect */
+  .btn-press {
+    @apply press-effect active:scale-95;
+  }
+  
+  /* Interactive list item */
+  .list-item-interactive {
+    @apply flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-all duration-200 cursor-pointer press-effect;
+  }
+  
+  /* Loading spinner base */
+  .spinner {
+    @apply animate-spin border-2 border-slate-200 border-t-blue-500 rounded-full;
+  }
+}
