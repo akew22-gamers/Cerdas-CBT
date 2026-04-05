@@ -32,7 +32,7 @@ async function getAvailableUjian(siswaId: string) {
 
   const { data: availableUjian } = await supabase
     .from('ujian')
-    .select('id, kode_ujian, judul, durasi, show_result')
+    .select('id, kode_ujian, judul, durasi, show_result, soal_count:soal(count)')
     .in('id', ujianIds)
     .eq('status', 'aktif')
 
@@ -50,7 +50,8 @@ async function getAvailableUjian(siswaId: string) {
     kode_ujian: u.kode_ujian,
     judul: u.judul,
     durasi: u.durasi,
-    show_result: u.show_result
+    show_result: u.show_result,
+    jumlah_soal: u.soal_count?.[0]?.count || 0
   }))
 }
 
@@ -95,6 +96,7 @@ export default async function SiswaUjianPage() {
                 kode_ujian={ujian.kode_ujian}
                 judul={ujian.judul}
                 durasi={ujian.durasi}
+                jumlah_soal={ujian.jumlah_soal}
               />
             ))}
           </div>

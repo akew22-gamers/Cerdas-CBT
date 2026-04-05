@@ -18,6 +18,7 @@ interface DashboardData {
     judul: string
     durasi: number
     show_result: boolean
+    jumlah_soal: number
   }>
   recent_hasil: Array<{
     id: string
@@ -98,7 +99,7 @@ async function getDashboardData(siswaId: string): Promise<DashboardData> {
   const { data: availableUjian } = ujianIds.length > 0
     ? await supabase
         .from('ujian')
-        .select('id, kode_ujian, judul, durasi, show_result')
+        .select('id, kode_ujian, judul, durasi, show_result, soal_count:soal(count)')
         .in('id', ujianIds)
         .eq('status', 'aktif')
     : { data: [] }
@@ -108,7 +109,8 @@ async function getDashboardData(siswaId: string): Promise<DashboardData> {
     kode_ujian: u.kode_ujian,
     judul: u.judul,
     durasi: u.durasi,
-    show_result: u.show_result
+    show_result: u.show_result,
+    jumlah_soal: u.soal_count?.[0]?.count || 0
   }))
 
   const formattedRecentHasil = (recentHasil || []).map((h: any) => ({
@@ -209,6 +211,7 @@ export default async function SiswaDashboardPage() {
                   kode_ujian={ujian.kode_ujian}
                   judul={ujian.judul}
                   durasi={ujian.durasi}
+                  jumlah_soal={ujian.jumlah_soal}
                 />
               ))}
             </div>
