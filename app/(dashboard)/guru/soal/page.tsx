@@ -59,23 +59,26 @@ async function fetchData(searchParamsProps: { ujian_id?: string }): Promise<{
   let ujianStatus: 'aktif' | 'nonaktif' = 'nonaktif'
 
   if (selectedUjianId) {
-    const { data: soalData, error } = await supabase
-      .from("soal")
-      .select("*")
-      .eq("ujian_id", selectedUjianId)
-      .order("urutan", { ascending: true })
+    const [soalResult, ujianResult] = await Promise.all([
+      supabase
+        .from("soal")
+        .select("*")
+        .eq("ujian_id", selectedUjianId)
+        .order("urutan", { ascending: true }),
+      supabase
+        .from("ujian")
+        .select("status")
+        .eq("id", selectedUjianId)
+        .eq("created_by", session.user.id)
+        .single()
+    ])
 
+    const { data: soalData, error } = soalResult
     if (!error && soalData) {
       soal = soalData
     }
 
-    const { data: ujianData } = await supabase
-      .from("ujian")
-      .select("status")
-      .eq("id", selectedUjianId)
-      .eq("created_by", session.user.id)
-      .single()
-
+    const { data: ujianData } = ujianResult
     if (ujianData) {
       ujianStatus = ujianData.status
     }

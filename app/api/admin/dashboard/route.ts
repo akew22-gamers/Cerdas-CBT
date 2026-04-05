@@ -20,26 +20,28 @@ export async function GET() {
 
     const supabase = createAdminClient()
 
-    const { data: guruData, error: guruError } = await supabase
-      .from('guru')
-      .select('id, nama, created_at')
+    // OPTIMIZATION: Parallelize independent queries
+    const [guruResult, siswaResult, ujianResult, auditResult] = await Promise.all([
+      supabase.from('guru').select('id, nama, created_at'),
+      supabase.from('siswa').select('id'),
+      supabase.from('ujian').select('id, status'),
+      supabase.from('audit_log')
+        .select('id, role, action, entity_type, details, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5)
+    ])
+
+    const { data: guruData, error: guruError } = guruResult
+    const { data: siswaData, error: siswaError } = siswaResult
+    const { data: ujianData, error: ujianError } = ujianResult
+    const { data: auditLogs, error: auditError } = auditResult
 
     if (guruError) throw guruError
-
-    const { data: siswaData, error: siswaError } = await supabase
-      .from('siswa')
-      .select('id')
-
     if (siswaError) throw siswaError
-
-    const { data: ujianData, error: ujianError } = await supabase
-      .from('ujian')
-      .select('id, status')
-
     if (ujianError) throw ujianError
+    if (auditError) console.error('Error fetching audit logs:', auditError)
 
-    const ujianAktif = ujianData.filter((u: any) => u.status === 'aktif').length
-
+    const ujianAktif = (ujianData || []).filter((u: any) => u.status === 'aktif').length
     const recentGuru = (guruData || [])
       .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5)
@@ -48,23 +50,6 @@ export async function GET() {
         nama: g.nama,
         created_at: g.created_at
       }))
-
-    const { data: auditLogs, error: auditError } = await supabase
-      .from('audit_log')
-      .select(`
-        id,
-        role,
-        action,
-        entity_type,
-        details,
-        created_at
-      `)
-      .order('created_at', { ascending: false })
-      .limit(5)
-
-    if (auditError) {
-      console.error('Error fetching audit logs:', auditError)
-    }
 
     const formattedAuditLogs = (auditLogs || []).map((log: any) => ({
       id: log.id,

@@ -85,6 +85,8 @@ export async function POST(request: Request) {
     const claimsPayload = {
       role,
       uid: user.id,
+      username: role === 'siswa' ? user.nisn : user.username,
+      nama: user.nama || null,
       exp: Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS
     }
     cookieStore.set(SESSION_CLAIMS_COOKIE_NAME, signClaims(claimsPayload), {

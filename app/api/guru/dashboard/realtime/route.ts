@@ -44,20 +44,24 @@ export async function GET() {
       })
     }
 
-    const sessionCounts: Array<{ ujian_id: string; count: number }> = []
+    // OPTIMIZATION: Single query instead of N+1 loop
+    const ujianIds = activeUjian.map((u: any) => u.id)
 
-    for (const ujian of activeUjian) {
-      const { count } = await supabase
-        .from('hasil_ujian')
-        .select('*', { count: 'exact', head: true })
-        .eq('ujian_id', ujian.id)
-        .eq('is_submitted', false)
+    const { data: hasilData } = await supabase
+      .from('hasil_ujian')
+      .select('ujian_id')
+      .in('ujian_id', ujianIds)
+      .eq('is_submitted', false)
 
-      sessionCounts.push({
-        ujian_id: ujian.id,
-        count: count || 0
-      })
+    const countMap: Record<string, number> = {}
+    for (const hasil of hasilData || []) {
+      countMap[hasil.ujian_id] = (countMap[hasil.ujian_id] || 0) + 1
     }
+
+    const sessionCounts = activeUjian.map((u: any) => ({
+      ujian_id: u.id,
+      count: countMap[u.id] || 0
+    }))
 
     const subscriptions = activeUjian.map((u: any) => ({
       ujian_id: u.id,
