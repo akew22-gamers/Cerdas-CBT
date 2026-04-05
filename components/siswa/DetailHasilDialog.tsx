@@ -56,7 +56,8 @@ function formatTime(dateString: string | null): string {
   const date = new Date(dateString)
   return date.toLocaleTimeString('id-ID', {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    second: '2-digit'
   })
 }
 
