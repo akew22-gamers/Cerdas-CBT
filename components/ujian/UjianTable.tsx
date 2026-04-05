@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation"
 import { EditUjianDialog } from "./EditUjianDialog"
 import { DetailUjianDialog } from "./DetailUjianDialog"
 import { AssignKelasDialog } from "./AssignKelasDialog"
+import { PrintKartuDialog } from "./PrintKartuDialog"
 
 interface Kelas {
   id: string
@@ -238,6 +239,11 @@ export function UjianTable({ data, onDelete, onToggle }: UjianTableProps) {
                       onAssignSuccess={() => router.refresh()}
                     />
                     <EditUjianDialog ujian={ujian} onUpdated={onDelete || onToggle} />
+                    <PrintKartuDialog
+                      ujianId={ujian.id}
+                      ujianJudul={ujian.judul}
+                      ujianKode={ujian.kode_ujian}
+                    />
 
                     <Button
                       variant="outline"
