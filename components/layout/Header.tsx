@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -142,7 +141,7 @@ export function Header({ user, className }: HeaderProps) {
             </DropdownMenuLabel>
 
             {/* Menu Items */}
-            <DropdownMenuGroup className="py-2">
+            <div className="py-2">
               <DropdownMenuItem
                 className={cn(
                   'cursor-pointer py-2.5 px-3 hover:bg-slate-50',
@@ -153,12 +152,12 @@ export function Header({ user, className }: HeaderProps) {
                 <User className="mr-3 h-4 w-4 text-slate-500" />
                 <span>Profil</span>
               </DropdownMenuItem>
-            </DropdownMenuGroup>
+            </div>
 
             <DropdownMenuSeparator />
 
             {/* Logout */}
-            <DropdownMenuGroup className="py-2">
+            <div className="py-2">
               <DropdownMenuItem
                 className={cn(
                   'cursor-pointer py-2.5 px-3',
@@ -171,7 +170,7 @@ export function Header({ user, className }: HeaderProps) {
                 <LogOut className="mr-3 h-4 w-4" />
                 <span>{isLoading ? 'Keluar...' : 'Keluar'}</span>
               </DropdownMenuItem>
-            </DropdownMenuGroup>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
