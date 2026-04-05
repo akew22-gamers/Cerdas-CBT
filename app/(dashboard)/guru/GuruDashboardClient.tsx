@@ -126,8 +126,8 @@ export function GuruDashboardClient({ initialData, ujianIds, user }: GuruDashboa
           )}
         </div>
 
-        {/* Stats Grid - Mobile: 2 columns, Desktop: 4 columns */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        {/* Stats Grid - Mobile: 2 columns (2 rows), Desktop: 4 columns (1 row) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <StatsCard
             icon={<GraduationCap className="w-5 h-5" />}
             label="Total Kelas"

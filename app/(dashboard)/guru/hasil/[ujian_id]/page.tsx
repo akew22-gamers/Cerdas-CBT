@@ -17,6 +17,7 @@ import {
 import { FileDown, ArrowLeft, Loader2, Users, TrendingUp, Target } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
+import { DetailHasilDialog } from "@/components/guru/DetailHasilDialog"
 
 interface SoalStat {
   soal_id: string
@@ -73,6 +74,8 @@ export default function HasilDetailPage() {
   const [hasilList, setHasilList] = useState<Hasil[]>([])
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
+  const [selectedHasilId, setSelectedHasilId] = useState<string | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -279,13 +282,19 @@ export default function HasilDetailPage() {
                             <TableCell>{hasil.siswa.nama}</TableCell>
                             <TableCell>{hasil.kelas}</TableCell>
                             <TableCell>
-                              <span className={`font-bold ${
-                                hasil.nilai >= 80 ? 'text-green-600' :
-                                hasil.nilai >= 60 ? 'text-yellow-600' :
-                                'text-red-600'
-                              }`}>
+                              <button
+                                onClick={() => {
+                                  setSelectedHasilId(hasil.id)
+                                  setDialogOpen(true)
+                                }}
+                                className={`font-bold cursor-pointer hover:underline ${
+                                  hasil.nilai >= 80 ? 'text-green-600' :
+                                  hasil.nilai >= 60 ? 'text-yellow-600' :
+                                  'text-red-600'
+                                }`}
+                              >
                                 {hasil.nilai.toFixed(2)}
-                              </span>
+                              </button>
                             </TableCell>
                             <TableCell>{hasil.jumlah_benar}</TableCell>
                             <TableCell>{hasil.jumlah_salah}</TableCell>
@@ -382,6 +391,12 @@ export default function HasilDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <DetailHasilDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          hasilId={selectedHasilId || ''}
+        />
       </div>
     </DashboardLayout>
   )

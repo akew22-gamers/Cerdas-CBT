@@ -52,6 +52,8 @@ export async function GET(
         waktu_mulai,
         waktu_selesai,
         is_submitted,
+        tab_switch_count,
+        fullscreen_exit_count,
         siswa:siswa_id (
           id,
           nisn,
@@ -74,6 +76,8 @@ export async function GET(
       'Jumlah Salah': h.jumlah_salah || 0,
       'Waktu Mulai': h.waktu_mulai ? new Date(h.waktu_mulai).toLocaleString('id-ID') : '-',
       'Waktu Selesai': h.waktu_selesai ? new Date(h.waktu_selesai).toLocaleString('id-ID') : '-',
+      'Ganti Tab': h.tab_switch_count || 0,
+      'Keluar Fullscreen': h.fullscreen_exit_count || 0,
       Status: h.is_submitted ? 'Selesai' : 'Belum Selesai'
     }))
 
@@ -91,6 +95,8 @@ export async function GET(
         { wch: 15 },
         { wch: 20 },
         { wch: 20 },
+        { wch: 12 },
+        { wch: 18 },
         { wch: 15 }
       ]
 
