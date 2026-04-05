@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import {
   Table,
   TableBody,
@@ -9,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Pencil, Trash2, Copy, ToggleRight, ToggleLeft, Users } from "lucide-react"
+import { Pencil, Trash2, Copy, ToggleRight, ToggleLeft, Search, FileText, Clock, Users } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { EditUjianDialog } from "./EditUjianDialog"
@@ -53,6 +55,17 @@ interface UjianTableProps {
 
 export function UjianTable({ data, onDelete, onToggle }: UjianTableProps) {
   const router = useRouter()
+  const [searchQuery, setSearchQuery] = React.useState("")
+
+  const filteredData = React.useMemo(() => {
+    if (!searchQuery.trim()) return data
+    const query = searchQuery.toLowerCase()
+    return data.filter(
+      (ujian) =>
+        ujian.judul.toLowerCase().includes(query) ||
+        ujian.kode_ujian.toLowerCase().includes(query)
+    )
+  }, [data, searchQuery])
 
   const handleToggle = async (id: string, currentStatus: "aktif" | "nonaktif", judul: string) => {
     try {
@@ -141,238 +154,163 @@ export function UjianTable({ data, onDelete, onToggle }: UjianTableProps) {
   }
 
   return (
-    <>
-      <div className="hidden md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-16">No</TableHead>
-              <TableHead>Kode</TableHead>
-              <TableHead>Judul</TableHead>
-              <TableHead className="text-center">Durasi</TableHead>
-              <TableHead className="text-center">Soal</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-              <TableHead className="text-right">Aksi</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((ujian) => (
-              <TableRow key={ujian.id}>
-                <TableCell className="font-medium">{data.findIndex(u => u.id === ujian.id) + 1}</TableCell>
-                <TableCell className="font-mono text-sm">{ujian.kode_ujian}</TableCell>
-                <TableCell>
-                  <div>
-                    <p className="font-medium">{ujian.judul}</p>
-                    {ujian.kelas.length > 0 && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {ujian.kelas.length} kelas
-                      </p>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-sm font-medium">
-                    {ujian.durasi} mnt
-                  </span>
-                </TableCell>
-                <TableCell className="text-center">
-                  <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 bg-gray-50 text-gray-700 rounded-md text-sm font-medium">
-                    {ujian.jumlah_soal}
-                  </span>
-                </TableCell>
-                <TableCell className="text-center">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                      ujian.status === "aktif"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {ujian.status === "aktif" ? "Aktif" : "Nonaktif"}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <DetailUjianDialog ujian={ujian} />
-                    <AssignKelasDialog
-                      ujianId={ujian.id}
-                      initialKelas={ujian.kelas}
-                      onAssignSuccess={() => router.refresh()}
-                    />
-                    <EditUjianDialog ujian={ujian} onUpdated={onDelete || onToggle} />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleToggle(ujian.id, ujian.status, ujian.judul)}
-                      className="gap-1"
-                    >
-                      {ujian.status === "aktif" ? (
-                        <ToggleLeft className="h-4 w-4" />
-                      ) : (
-                        <ToggleRight className="h-4 w-4" />
-                      )}
-                      {ujian.status === "aktif" ? "Nonaktif" : "Aktif"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDuplicate(ujian.id)}
-                      className="gap-1"
-                    >
-                      <Copy className="h-4 w-4" />
-                      Duplikat
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger
-                        render={
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="gap-1"
-                            disabled={ujian.status === "aktif"}
-                            title={ujian.status === "aktif" ? "Nonaktifkan ujian terlebih dahulu untuk hapus" : "Hapus"}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Hapus
-                          </Button>
-                        }
-                      />
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Hapus Ujian</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Apakah Anda yakin ingin menghapus ujian "
-                            <span className="font-semibold text-foreground">
-                              {ujian.judul}
-                            </span>
-                            "? Semua soal akan ikut terhapus. Aksi ini tidak dapat dibatalkan.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Batal</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(ujian.id, ujian.judul)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Hapus
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input
+          placeholder="Cari berdasarkan nama ujian atau kode ujian..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
-      <div className="md:hidden space-y-3">
-        {data.map((ujian) => (
-          <div
-            key={ujian.id}
-            className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-mono font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                    {ujian.kode_ujian}
-                  </span>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      ujian.status === "aktif"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {ujian.status === "aktif" ? "Aktif" : "Nonaktif"}
-                  </span>
+      {searchQuery && (
+        <p className="text-sm text-gray-500">
+          Menampilkan {filteredData.length} dari {data.length} ujian
+        </p>
+      )}
+
+      {filteredData.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredData.map((ujian) => (
+            <div
+              key={ujian.id}
+              className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden"
+            >
+              <div className="p-4 border-b border-gray-100">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-xs font-mono font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+                        {ujian.kode_ujian}
+                      </span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          ujian.status === "aktif"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {ujian.status === "aktif" ? "Aktif" : "Nonaktif"}
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-gray-900 truncate" title={ujian.judul}>
+                      {ujian.judul}
+                    </h3>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-gray-900">{ujian.judul}</h3>
-                {ujian.kelas.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-1">{ujian.kelas.length} kelas</p>
-                )}
+              </div>
+
+              <div className="p-4 space-y-3">
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                    <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-blue-500 uppercase font-medium">Durasi</p>
+                      <p className="text-sm font-semibold text-blue-700">{ujian.durasi} mnt</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-amber-50 rounded-lg">
+                    <FileText className="w-4 h-4 text-amber-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-amber-500 uppercase font-medium">Soal</p>
+                      <p className="text-sm font-semibold text-amber-700">{ujian.jumlah_soal}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg">
+                    <Users className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-emerald-500 uppercase font-medium">Kelas</p>
+                      <p className="text-sm font-semibold text-emerald-700">{ujian.kelas.length}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-2">
+                  <DetailUjianDialog ujian={ujian} />
+                  <AssignKelasDialog
+                    ujianId={ujian.id}
+                    initialKelas={ujian.kelas}
+                    onAssignSuccess={() => router.refresh()}
+                  />
+                  <EditUjianDialog ujian={ujian} onUpdated={onDelete || onToggle} />
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleToggle(ujian.id, ujian.status, ujian.judul)}
+                    className={`gap-1 ${ujian.status === "aktif" ? "border-orange-200 text-orange-600 hover:bg-orange-50" : "border-green-200 text-green-600 hover:bg-green-50"}`}
+                  >
+                    {ujian.status === "aktif" ? (
+                      <ToggleLeft className="h-4 w-4" />
+                    ) : (
+                      <ToggleRight className="h-4 w-4" />
+                    )}
+                    {ujian.status === "aktif" ? "Nonaktif" : "Aktif"}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDuplicate(ujian.id)}
+                    className="gap-1"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Duplikat
+                  </Button>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger
+                      render={
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="gap-1"
+                          disabled={ujian.status === "aktif"}
+                          title={ujian.status === "aktif" ? "Nonaktifkan ujian terlebih dahulu untuk hapus" : "Hapus"}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Hapus
+                        </Button>
+                      }
+                    />
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Ujian</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Apakah Anda yakin ingin menghapus ujian "
+                          <span className="font-semibold text-foreground">
+                            {ujian.judul}
+                          </span>
+                          "? Semua soal akan ikut terhapus. Aksi ini tidak dapat dibatalkan.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(ujian.id, ujian.judul)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Hapus
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </div>
-            <div className="flex gap-3 mb-3 text-sm">
-              <span className="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
-                {ujian.durasi} menit
-              </span>
-              <span className="inline-flex items-center px-2 py-1 bg-gray-50 text-gray-700 rounded-md text-xs font-medium">
-                {ujian.jumlah_soal} soal
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
-              <DetailUjianDialog ujian={ujian} />
-              <AssignKelasDialog
-                ujianId={ujian.id}
-                initialKelas={ujian.kelas}
-                onAssignSuccess={() => router.refresh()}
-              />
-              <EditUjianDialog ujian={ujian} onUpdated={onDelete || onToggle} />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleToggle(ujian.id, ujian.status, ujian.judul)}
-                className="flex-1 gap-1 min-w-[45%]"
-              >
-                {ujian.status === "aktif" ? (
-                  <ToggleLeft className="h-4 w-4" />
-                ) : (
-                  <ToggleRight className="h-4 w-4" />
-                )}
-                {ujian.status === "aktif" ? "Nonaktif" : "Aktif"}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDuplicate(ujian.id)}
-                className="flex-1 gap-1 min-w-[45%]"
-              >
-                <Copy className="h-4 w-4" />
-                Duplikat
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger
-                  render={
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="flex-1 gap-1 min-w-[45%]"
-                      disabled={ujian.status === "aktif"}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Hapus
-                    </Button>
-                  }
-                />
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Hapus Ujian</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Apakah Anda yakin ingin menghapus ujian "
-                      <span className="font-semibold text-foreground">
-                        {ujian.judul}
-                      </span>
-                      "? Aksi ini tidak dapat dibatalkan.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleDelete(ujian.id, ujian.judul)}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      Hapus
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Search className="w-12 h-12 text-gray-300 mb-4" />
+          <p className="text-gray-500 font-medium">Tidak ada hasil</p>
+          <p className="text-gray-400 text-sm mt-1">
+            Tidak ditemukan ujian dengan kata kunci "{searchQuery}"
+          </p>
+        </div>
+      )}
+    </div>
   )
 }
