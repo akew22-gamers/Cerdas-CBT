@@ -54,9 +54,29 @@ export function UjianLoginPage({ schoolName, ujianId, siswaId, kodeUjian }: Ujia
       const kode = params.get('k')
       
       if (uId && sId && kode) {
-        toast.success("QR Code berhasil dipindai! Mengarahkan...")
-        const targetUrl = `/ujian?u=${uId}&s=${sId}&k=${kode}`
-        window.location.href = targetUrl
+        setIsScanning(false)
+        if (scannerRef.current) {
+          scannerRef.current.clear().catch(console.error)
+          scannerRef.current = null
+        }
+        
+        setIsLoading(true)
+        fetch('/api/ujian/login/qr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ujian_id: uId, siswa_id: sId, kode_ujian: kode })
+        }).then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              toast.success("QR Code berhasil dipindai! Mengarahkan ke ujian...")
+              window.location.href = data.data.redirect_url || "/siswa/ujian"
+            } else {
+              throw new Error(data.error?.message || "Gagal masuk menggunakan QR code")
+            }
+          }).catch(err => {
+            toast.error(err.message)
+            setIsLoading(false)
+          })
       } else {
         toast.error("QR Code tidak valid.")
         setIsScanning(false)

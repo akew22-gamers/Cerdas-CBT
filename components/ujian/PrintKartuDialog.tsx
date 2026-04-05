@@ -100,6 +100,33 @@ export function PrintKartuDialog({ ujianId, ujianJudul, ujianKode }: PrintKartuD
     }
   }
 
+  const prepareLogoForPdf = (logoUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!logoUrl) return resolve("");
+      // React-PDF only supports PNG/JPG. If it's an SVG (Base64 or path), draw to canvas first.
+      if (!logoUrl.includes('image/svg+xml') && !logoUrl.endsWith('.svg')) {
+        return resolve(logoUrl);
+      }
+      
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width || 200;
+        canvas.height = img.height || 200;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL("image/png"));
+        } else {
+          resolve(logoUrl);
+        }
+      };
+      img.onerror = () => resolve(logoUrl);
+      img.src = logoUrl;
+    });
+  };
+
   const handleDownload = async () => {
     if (selectedIds.size === 0) {
       toast.error("Pilih minimal satu siswa untuk dicetak")
@@ -115,9 +142,22 @@ export function PrintKartuDialog({ ujianId, ujianJudul, ujianKode }: PrintKartuD
       const studentsWithQR = await Promise.all(
         selectedStudents.map(async (student) => {
           const qrDataUrl = await generateQRCode(student.loginUrl)
+          
+          let pngLogo = student.sekolah.logo_url;
+          if (pngLogo) {
+             pngLogo = await prepareLogoForPdf(pngLogo);
+          } else {
+             // Fallback to default logo
+             pngLogo = await prepareLogoForPdf("/images/logo_kemendikdasmen.svg");
+          }
+
           return {
             ...student,
             qrData: qrDataUrl,
+            sekolah: {
+              ...student.sekolah,
+              logo_url: pngLogo
+            }
           }
         })
       )

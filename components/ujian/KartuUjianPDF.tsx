@@ -238,10 +238,12 @@ function ExamCard({
     <View style={isLastCard ? styles.lastCard : styles.card}>
       <View style={styles.headerSection}>
         <View style={styles.logoContainer}>
-          {sekolah.logo_url && sekolah.logo_url.startsWith('data:') ? (
+          {sekolah.logo_url ? (
             <Image src={sekolah.logo_url} style={styles.logo} />
           ) : (
-            <Image src="/images/logo_kemendikdasmen.svg" style={styles.logo} />
+            <View style={styles.logoPlaceholder}>
+              <Text style={{ fontSize: 5, color: '#666' }}>LOGO</Text>
+            </View>
           )}
         </View>
         <View style={styles.headerText}>
