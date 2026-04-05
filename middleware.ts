@@ -144,8 +144,8 @@ export async function middleware(request: NextRequest) {
     path: '/',
   })
 
-  const protectedRoutes = ['/dashboard', '/ujian', '/admin', '/guru', '/siswa']
-  const publicRoutes = ['/login', '/register']
+  const protectedRoutes = ['/dashboard', '/admin', '/guru', '/siswa']
+  const publicRoutes = ['/login', '/register', '/ujian']
   const rootRoute = '/'
 
   const isProtectedRoute = protectedRoutes.some(route =>

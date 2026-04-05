@@ -65,7 +65,7 @@ export async function GET(
         kelas:kelas(id, nama_kelas)
       `)
       .in('kelas_id', kelasIds)
-      .order('nama', { ascending: true })
+      .order('nisn', { ascending: true })
 
     if (siswaError) {
       console.error('Error fetching siswa:', siswaError)

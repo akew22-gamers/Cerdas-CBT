@@ -13,8 +13,8 @@ import { KartuUjianData } from '@/types/kartu'
 const PAGE_WIDTH = 595.28
 const PAGE_HEIGHT = 841.89
 
-const MARGIN_TOP = 20
-const MARGIN_BOTTOM = 20
+const MARGIN_TOP = 15
+const MARGIN_BOTTOM = 15
 const MARGIN_LEFT = 15
 const MARGIN_RIGHT = 15
 
@@ -47,106 +47,155 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    borderWidth: 1,
-    borderColor: '#333333',
+    borderWidth: 1.5,
+    borderColor: '#000000',
     borderStyle: 'solid',
-    padding: 8,
+    padding: 6,
     marginRight: GAP,
     backgroundColor: '#FFFFFF',
+    flexDirection: 'column',
   },
   lastCard: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    borderWidth: 1,
-    borderColor: '#333333',
+    borderWidth: 1.5,
+    borderColor: '#000000',
     borderStyle: 'solid',
-    padding: 8,
+    padding: 6,
     backgroundColor: '#FFFFFF',
+    flexDirection: 'column',
   },
-  cardHeader: {
-    alignItems: 'center',
-    marginBottom: 6,
+  
+  headerSection: {
+    flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#333333',
+    borderBottomColor: '#000000',
     paddingBottom: 4,
+    marginBottom: 4,
   },
-  schoolName: {
+  logoContainer: {
+    width: 35,
+    height: 35,
+    marginRight: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 32,
+    height: 32,
+    objectFit: 'contain',
+  },
+  headerText: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  headerLine1: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#000000',
+    textAlign: 'center',
+  },
+  headerLine2: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#000000',
+    textAlign: 'center',
+  },
+  headerLine3: {
+    fontSize: 5.5,
+    color: '#333333',
+    textAlign: 'center',
+  },
+  
+  titleSection: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#000000',
+    paddingVertical: 3,
+    marginBottom: 4,
+  },
+  titleText: {
     fontSize: 9,
     fontWeight: 'bold',
     textAlign: 'center',
     color: '#000000',
   },
-  logo: {
-    width: 30,
-    height: 30,
-    marginBottom: 3,
-    objectFit: 'contain',
-  },
-  cardContent: {
+  
+  contentSection: {
     flexDirection: 'row',
     flex: 1,
   },
-  infoSection: {
+  leftSection: {
     flex: 1,
-    paddingRight: 6,
+    paddingRight: 4,
   },
-  qrSection: {
+  rightSection: {
     width: 65,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  
+  sectionTitle: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginBottom: 1,
+  },
+  sectionContent: {
+    marginBottom: 4,
+  },
+  rowLabel: {
+    fontSize: 6,
+    color: '#333333',
+  },
+  rowValue: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#000000',
+  },
+  
+  divider: {
+    borderTopWidth: 0.5,
+    borderTopColor: '#666666',
+    marginVertical: 3,
+  },
+  
   qrImage: {
-    width: 60,
-    height: 60,
+    width: 55,
+    height: 55,
+  },
+  qrPlaceholder: {
+    width: 55,
+    height: 55,
+    backgroundColor: '#E5E5E5',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   qrLabel: {
-    fontSize: 6,
+    fontSize: 5,
     textAlign: 'center',
+    color: '#666666',
     marginTop: 2,
-    color: '#666666',
-  },
-  infoRow: {
-    marginBottom: 3,
-  },
-  infoLabel: {
-    fontSize: 7,
-    color: '#666666',
-    marginBottom: 1,
-  },
-  infoValue: {
-    fontSize: 8,
     fontWeight: 'bold',
-    color: '#000000',
   },
-  examInfoSection: {
-    marginTop: 6,
-    paddingTop: 4,
+  
+  footerSection: {
     borderTopWidth: 0.5,
-    borderTopColor: '#999999',
+    borderTopColor: '#666666',
+    paddingTop: 2,
+    marginTop: 'auto',
   },
-  examTitle: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginBottom: 2,
-  },
-  examDetail: {
-    fontSize: 7,
+  footerLine1: {
+    fontSize: 5,
     color: '#333333',
-    marginBottom: 1,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
-  cardFooter: {
-    position: 'absolute',
-    bottom: 4,
-    left: 0,
-    right: 0,
+  footerLine2: {
+    fontSize: 5,
+    color: '#333333',
     textAlign: 'center',
   },
-  footerText: {
-    fontSize: 6,
-    color: '#999999',
-    textAlign: 'center',
-  },
+  
   emptyPage: {
     flex: 1,
     justifyContent: 'center',
@@ -168,15 +217,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 
 function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
-  return text.slice(0, maxLength - 3) + '...'
-}
-
-function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes} menit`
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  if (mins === 0) return `${hours} jam`
-  return `${hours} jam ${mins} menit`
+  return text.slice(0, maxLength - 2) + '..'
 }
 
 function ExamCard({
@@ -190,56 +231,66 @@ function ExamCard({
 
   return (
     <View style={isLastCard ? styles.lastCard : styles.card}>
-      <View style={styles.cardHeader}>
-        {sekolah.logo_url && (
-          <Image
-            src={sekolah.logo_url}
-            style={styles.logo}
-          />
-        )}
-        <Text style={styles.schoolName}>
-          {truncateText(sekolah.nama_sekolah, 40)}
-        </Text>
+      <View style={styles.headerSection}>
+        <View style={styles.logoContainer}>
+          {sekolah.logo_url ? (
+            <Image src={sekolah.logo_url} style={styles.logo} />
+          ) : (
+            <View style={[styles.logo, { backgroundColor: '#E5E5E5', justifyContent: 'center', alignItems: 'center' }]}>
+              <Text style={{ fontSize: 8, color: '#999' }}>Logo</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.headerText}>
+          <Text style={styles.headerLine1}>KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH</Text>
+          <Text style={styles.headerLine2}>{truncateText(sekolah.nama_sekolah, 35)}</Text>
+          <Text style={styles.headerLine3}>KARTU PESERTA UJIAN</Text>
+        </View>
       </View>
 
-      <View style={styles.cardContent}>
-        <View style={styles.infoSection}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>NISN</Text>
-            <Text style={styles.infoValue}>{siswa.nisn}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Nama</Text>
-            <Text style={styles.infoValue}>{truncateText(siswa.nama, 25)}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Kelas</Text>
-            <Text style={styles.infoValue}>
-              {siswa.kelas?.nama_kelas || '-'}
-            </Text>
+      <View style={styles.contentSection}>
+        <View style={styles.leftSection}>
+          <View style={styles.sectionContent}>
+            <Text style={styles.sectionTitle}>DATA PESERTA</Text>
+            <View style={{ marginBottom: 1 }}>
+              <Text style={styles.rowLabel}>Nama  : {truncateText(siswa.nama, 22)}</Text>
+            </View>
+            <View style={{ marginBottom: 1 }}>
+              <Text style={styles.rowLabel}>NISN  : {siswa.nisn}</Text>
+            </View>
+            <View style={{ marginBottom: 1 }}>
+              <Text style={styles.rowLabel}>Kelas : {siswa.kelas?.nama_kelas || '-'}</Text>
+            </View>
           </View>
 
-          <View style={styles.examInfoSection}>
-            <Text style={styles.examTitle}>{truncateText(ujian.judul, 30)}</Text>
-            <Text style={styles.examDetail}>Kode: {ujian.kode_ujian}</Text>
-            <Text style={styles.examDetail}>Durasi: {formatDuration(ujian.durasi)}</Text>
+          <View style={styles.divider} />
+
+          <View style={styles.sectionContent}>
+            <Text style={styles.sectionTitle}>INFORMASI UJIAN</Text>
+            <View style={{ marginBottom: 1 }}>
+              <Text style={styles.rowLabel}>Ujian : {truncateText(ujian.judul, 25)}</Text>
+            </View>
+            <View style={{ marginBottom: 1 }}>
+              <Text style={styles.rowLabel}>Kode  : {ujian.kode_ujian}</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.qrSection}>
+        <View style={styles.rightSection}>
           {qrData && qrData.startsWith('data:image') ? (
             <Image src={qrData} style={styles.qrImage} />
           ) : (
-            <View style={[styles.qrImage, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
+            <View style={styles.qrPlaceholder}>
               <Text style={{ fontSize: 6, color: '#999' }}>QR</Text>
             </View>
           )}
-          <Text style={styles.qrLabel}>Scan untuk login</Text>
+          <Text style={styles.qrLabel}>SCAN TO LOGIN</Text>
         </View>
       </View>
 
-      <View style={styles.cardFooter}>
-        <Text style={styles.footerText}>Cerdas-CBT by EAS Creative Studio</Text>
+      <View style={styles.footerSection}>
+        <Text style={styles.footerLine1}>* {truncateText(ujian.judul, 30)}</Text>
+        <Text style={styles.footerLine2}>URL: https://cerdas.eas.biz.id/ujian</Text>
       </View>
     </View>
   )
