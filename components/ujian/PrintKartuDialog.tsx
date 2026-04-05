@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ interface PrintKartuDialogProps {
   ujianKode: string
 }
 
-const DEFAULT_KEMENDIKDASMEN_LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzMzNjZjYyIvPjx0ZXh0IHg9IjUwIiB5PSI2NSIgZm9udC1zaXplPSI0MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiPuKchDwvdGV4dD48L3N2Zz4="
+const DEFAULT_LOGO_URL = "/images/logo_kemendikdasmen.svg"
 
 export function PrintKartuDialog({ ujianId, ujianJudul, ujianKode }: PrintKartuDialogProps) {
   const [open, setOpen] = useState(false)
@@ -85,7 +85,17 @@ export function PrintKartuDialog({ ujianId, ujianJudul, ujianKode }: PrintKartuD
 
   const convertImageToBase64 = async (url: string): Promise<string> => {
     try {
-      const response = await fetch(url)
+      // Jika url sudah berupa data URL, langsung return
+      if (url.startsWith('data:')) {
+        return url
+      }
+      
+      // Convert relative URL ke absolute
+      const fullUrl = url.startsWith('/') 
+        ? `${window.location.origin}${url}`
+        : url
+      
+      const response = await fetch(fullUrl)
       const blob = await response.blob()
       return new Promise((resolve, reject) => {
         const reader = new FileReader()
@@ -95,7 +105,7 @@ export function PrintKartuDialog({ ujianId, ujianJudul, ujianKode }: PrintKartuD
       })
     } catch (error) {
       console.error("Failed to convert image:", error)
-      return DEFAULT_KEMENDIKDASMEN_LOGO
+      return DEFAULT_LOGO_URL
     }
   }
 
@@ -131,9 +141,9 @@ export function PrintKartuDialog({ ujianId, ujianJudul, ujianKode }: PrintKartuD
       const studentsWithQR = await Promise.all(
         selectedStudents.map(async (student) => {
           const qrDataUrl = await generateQRCode(student.loginUrl)
-          const logoDataUrl = student.sekolah.logo_url 
-            ? await convertImageToBase64(student.sekolah.logo_url)
-            : DEFAULT_KEMENDIKDASMEN_LOGO
+          // Gunakan logo dari sekolah atau fallback ke default logo
+          const logoUrl = student.sekolah.logo_url || DEFAULT_LOGO_URL
+          const logoDataUrl = await convertImageToBase64(logoUrl)
           return {
             ...student,
             qrData: qrDataUrl,

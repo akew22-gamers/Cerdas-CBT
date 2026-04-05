@@ -58,40 +58,74 @@ export function UjianLoginPage({ schoolName, ujianId, siswaId, kodeUjian }: Ujia
         const targetUrl = `/ujian?u=${uId}&s=${sId}&k=${kode}`
         window.location.href = targetUrl
       } else {
-        toast.error("QR Code tidak valid. Pastikan QR code dari kartu ujian yang benar.")
+        toast.error("QR Code tidak valid.")
+        setIsScanning(false)
+        if (scannerRef.current) {
+          scannerRef.current.clear().catch(console.error)
+          scannerRef.current = null
+        }
       }
     } catch {
-      toast.error("Gagal membaca QR Code. Silakan coba lagi atau gunakan login manual.")
-    }
-    
-    if (scannerRef.current) {
-      scannerRef.current.clear().catch(console.error)
+      toast.error("Gagal membaca QR Code. Gunakan login manual.")
       setIsScanning(false)
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(console.error)
+        scannerRef.current = null
+      }
     }
   }, [])
 
-  const onScanFailure = useCallback((error: string) => {
+const onScanFailure = useCallback((error: string) => {
     console.warn("QR Scan warning:", error)
+    // Silent warning - don't spam console
   }, [])
 
-  const startScanner = useCallback(() => {
+  const startScanner = useCallback(async () => {
     if (!scannerContainerRef.current) return
-    
-    setIsScanning(true)
 
-    scannerRef.current = new Html5QrcodeScanner(
-      "qr-reader",
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        showTorchButtonIfSupported: true,
-        showZoomSliderIfSupported: true,
-      },
-      false
-    )
+    // Check if we're in a secure context (HTTPS)
+    if (!window.isSecureContext) {
+      toast.error("QR Scanner memerlukan HTTPS")
+      return
+    }
 
-    scannerRef.current.render(onScanSuccess, onScanFailure)
+    // Check for mediaDevices support
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+      toast.error("Browser tidak mendukung kamera")
+      return
+    }
+
+    try {
+      // Request camera access first
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      stream.getTracks().forEach(track => track.stop())
+
+      setIsScanning(true)
+
+      scannerRef.current = new Html5QrcodeScanner(
+        "qr-reader",
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          showTorchButtonIfSupported: true,
+          showZoomSliderIfSupported: true,
+        },
+        false
+      )
+
+      scannerRef.current.render(onScanSuccess, onScanFailure)
+
+    } catch (err: any) {
+      console.error("Camera access error:", err)
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        toast.error("Izin kamera ditolak")
+      } else if (err.name === 'NotFoundError') {
+        toast.error("Kamera tidak ditemukan")
+      } else {
+        toast.error("Gagal mengakses kamera")
+      }
+    }
   }, [onScanSuccess, onScanFailure])
 
   const stopScanner = useCallback(() => {
@@ -239,6 +273,9 @@ export function UjianLoginPage({ schoolName, ujianId, siswaId, kodeUjian }: Ujia
                 <Camera className="w-4 h-4 mr-2" />
                 Mulai Scan QR
               </Button>
+              <p className="text-xs text-slate-500 text-center">
+                Pastikan browser Anda mendukung kamera dan menggunakan HTTPS
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
