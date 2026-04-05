@@ -119,12 +119,19 @@ export function AssignKelasDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger && <DialogTrigger>{trigger}</DialogTrigger>}
       {!trigger && (
-        <DialogTrigger>
-          <Button variant="outline" className="gap-2">
-            <Users className="h-4 w-4" />
-            Assign Kelas
-          </Button>
-        </DialogTrigger>
+        <DialogTrigger
+          render={
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              title="Assign Kelas"
+            >
+              <Users className="h-4 w-4" />
+              Kelas
+            </Button>
+          }
+        />
       )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
