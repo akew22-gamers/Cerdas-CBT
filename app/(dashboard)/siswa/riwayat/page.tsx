@@ -74,6 +74,7 @@ export default async function SiswaRiwayatPage() {
             {riwayatList.map((hasil) => (
               <RiwayatCard
                 key={hasil.id}
+                id={hasil.id}
                 ujian_judul={hasil.ujian_judul}
                 nilai={hasil.nilai}
                 show_result={hasil.show_result}
