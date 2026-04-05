@@ -1,14 +1,6 @@
 "use client"
 
 import * as React from "react"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -22,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Pencil, Trash2, Copy, ToggleRight, ToggleLeft, Search, FileText, Clock, Users } from "lucide-react"
+import { Pencil, Trash2, Copy, ToggleRight, ToggleLeft, Search, FileText, Clock } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { EditUjianDialog } from "./EditUjianDialog"
@@ -154,8 +146,8 @@ export function UjianTable({ data, onDelete, onToggle }: UjianTableProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="relative">
+    <>
+      <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <Input
           placeholder="Cari berdasarkan nama ujian atau kode ujian..."
@@ -166,7 +158,7 @@ export function UjianTable({ data, onDelete, onToggle }: UjianTableProps) {
       </div>
 
       {searchQuery && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 mb-4">
           Menampilkan {filteredData.length} dari {data.length} ujian
         </p>
       )}
@@ -203,12 +195,12 @@ export function UjianTable({ data, onDelete, onToggle }: UjianTableProps) {
               </div>
 
               <div className="p-4 space-y-3">
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
                     <Clock className="w-4 h-4 text-blue-600 shrink-0" />
                     <div className="min-w-0">
                       <p className="text-[10px] text-blue-500 uppercase font-medium">Durasi</p>
-                      <p className="text-sm font-semibold text-blue-700">{ujian.durasi} mnt</p>
+                      <p className="text-sm font-semibold text-blue-700">{ujian.durasi} menit</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 p-2 bg-amber-50 rounded-lg">
@@ -218,14 +210,23 @@ export function UjianTable({ data, onDelete, onToggle }: UjianTableProps) {
                       <p className="text-sm font-semibold text-amber-700">{ujian.jumlah_soal}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg">
-                    <Users className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-[10px] text-emerald-500 uppercase font-medium">Kelas</p>
-                      <p className="text-sm font-semibold text-emerald-700">{ujian.kelas.length}</p>
+                </div>
+
+                {ujian.kelas.length > 0 && (
+                  <div className="p-2 bg-emerald-50 rounded-lg">
+                    <p className="text-[10px] text-emerald-500 uppercase font-medium mb-1">Kelas ({ujian.kelas.length})</p>
+                    <div className="flex flex-wrap gap-1">
+                      {ujian.kelas.map((k) => (
+                        <span
+                          key={k.id}
+                          className="text-xs bg-white text-emerald-700 px-2 py-0.5 rounded border border-emerald-200"
+                        >
+                          {k.nama_kelas}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className="grid grid-cols-3 gap-2 pt-2">
                   <DetailUjianDialog ujian={ujian} />
@@ -311,6 +312,6 @@ export function UjianTable({ data, onDelete, onToggle }: UjianTableProps) {
           </p>
         </div>
       )}
-    </div>
+    </>
   )
 }
