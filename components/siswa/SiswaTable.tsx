@@ -22,8 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Trash2, GraduationCap, School, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { Trash2, GraduationCap, School, ChevronLeft, ChevronRight } from "lucide-react"
 import { ResetPasswordDialog } from "./ResetPasswordDialog"
 import { EditSiswaDialog } from "./EditSiswaDialog"
 
@@ -47,21 +46,30 @@ interface SiswaTableProps {
   siswaList: Siswa[]
   onRefresh?: () => void
   kelasList?: Kelas[]
+  sortKey?: string
+  onSortKeyChange?: (value: string) => void
+  itemsPerPage?: number
+  onItemsPerPageChange?: (value: number) => void
+  searchQuery?: string
+  totalSiswa?: number
 }
 
-export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableProps) {
+export function SiswaTable({ 
+  siswaList, 
+  onRefresh, 
+  kelasList = [],
+  sortKey = 'nama_asc',
+  onSortKeyChange,
+  itemsPerPage = 10,
+  onItemsPerPageChange,
+  searchQuery = '',
+  totalSiswa
+}: SiswaTableProps) {
   const router = useRouter()
-  // Single delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [selectedSiswa, setSelectedSiswa] = React.useState<Siswa | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
-
-  // Pagination & Sorting state
   const [currentPage, setCurrentPage] = React.useState(1)
-  const [itemsPerPage, setItemsPerPage] = React.useState(10)
-  const [sortKey, setSortKey] = React.useState<string>('nama_asc')
-  
-  // Bulk action state
   const [selectedIds, setSelectedIds] = React.useState<string[]>([])
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = React.useState(false)
   const [isBulkDeleting, setIsBulkDeleting] = React.useState(false)
@@ -76,15 +84,28 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
     })
   }, [siswaList, sortKey])
 
-  const totalPages = Math.max(1, Math.ceil(sortedList.length / itemsPerPage))
+  const filteredList = React.useMemo(() => {
+    if (!searchQuery) return sortedList
+    const query = searchQuery.toLowerCase()
+    return sortedList.filter(siswa => 
+      siswa.nama.toLowerCase().includes(query) ||
+      siswa.nisn.toLowerCase().includes(query)
+    )
+  }, [sortedList, searchQuery])
+
+  const totalPages = Math.max(1, Math.ceil(filteredList.length / itemsPerPage))
   
   const paginatedList = React.useMemo(() => {
-    return sortedList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-  }, [sortedList, currentPage, itemsPerPage])
+    return filteredList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  }, [filteredList, currentPage, itemsPerPage])
 
   React.useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages)
+    if (currentPage > totalPages) setCurrentPage(1)
   }, [totalPages, currentPage])
+
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, sortKey, itemsPerPage])
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -116,7 +137,6 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
       if (!result.success) throw new Error(result.error?.message || "Gagal menghapus siswa")
       
       toast.success("Siswa berhasil dihapus")
-      // Remove from selectedIds if present
       setSelectedIds(prev => prev.filter(id => id !== selectedSiswa.id))
       onRefresh?.() || router.refresh()
     } catch (error) {
@@ -154,6 +174,8 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
 
   const isAllOnPageSelected = paginatedList.length > 0 && paginatedList.every(s => selectedIds.includes(s.id))
 
+  const displayTotal = totalSiswa ?? siswaList.length
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -169,43 +191,8 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
               Hapus Terpilih ({selectedIds.length})
             </Button>
           ) : (
-            <span className="text-sm text-slate-500 font-medium">Total: {sortedList.length} Siswa</span>
+            <span className="text-sm text-slate-500 font-medium">Total: {displayTotal} Siswa{searchQuery && filteredList.length !== displayTotal && ` (ditampilkan: ${filteredList.length})`}</span>
           )}
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">Urutkan:</span>
-            <Select value={sortKey} onValueChange={(val) => { if (val) setSortKey(val) }}>
-              <SelectTrigger className="w-[160px] h-9">
-                <SelectValue placeholder="Urutan..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="nama_asc">Nama (A-Z)</SelectItem>
-                <SelectItem value="nama_desc">Nama (Z-A)</SelectItem>
-                <SelectItem value="nisn_asc">NISN (A-Z)</SelectItem>
-                <SelectItem value="nisn_desc">NISN (Z-A)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">Tampilkan:</span>
-            <Select value={itemsPerPage.toString()} onValueChange={(val) => {
-              if (val) {
-                setItemsPerPage(Number(val))
-                setCurrentPage(1)
-              }
-            }}>
-              <SelectTrigger className="w-[80px] h-9">
-                <SelectValue placeholder="10" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
       </div>
 
@@ -223,15 +210,7 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
               </TableHead>
               <TableHead className="w-16 text-slate-600 font-semibold">No</TableHead>
               <TableHead className="text-slate-600 font-semibold">NISN</TableHead>
-              <TableHead className="text-slate-600 font-semibold">
-                <div 
-                  className="flex items-center gap-1 cursor-pointer hover:text-slate-900 select-none"
-                  onClick={() => setSortKey(prev => prev === 'nama_asc' ? 'nama_desc' : 'nama_asc')}
-                >
-                  Nama
-                  <ArrowUpDown className="w-3 h-3" />
-                </div>
-              </TableHead>
+              <TableHead className="text-slate-600 font-semibold">Nama</TableHead>
               <TableHead className="text-slate-600 font-semibold">Kelas</TableHead>
               <TableHead className="w-48 text-slate-600 font-semibold">Aksi</TableHead>
             </TableRow>
@@ -242,7 +221,7 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
                 <TableCell colSpan={6} className="text-center py-12 text-slate-400">
                   <div className="flex flex-col items-center gap-2">
                     <GraduationCap className="w-8 h-8 text-slate-300" />
-                    <p>Belum ada data siswa</p>
+                    <p>{searchQuery ? 'Tidak ada siswa yang sesuai pencarian' : 'Belum ada data siswa'}</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -311,12 +290,11 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
           </TableBody>
         </Table>
         
-        {/* Pagination Controls */}
-        {sortedList.length > 0 && (
+        {filteredList.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50 sm:px-6">
             <div className="hidden sm:block">
               <p className="text-sm text-slate-700">
-                Menampilkan <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> sampai <span className="font-medium">{Math.min(currentPage * itemsPerPage, sortedList.length)}</span> dari <span className="font-medium">{sortedList.length}</span> data
+                Menampilkan <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> sampai <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredList.length)}</span> dari <span className="font-medium">{filteredList.length}</span> data
               </p>
             </div>
             <div className="flex flex-1 justify-between sm:justify-end gap-2">
@@ -348,7 +326,6 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
         )}
       </div>
 
-      {/* Bulk Delete Dialog */}
       <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
         <AlertDialogContent className="border-slate-200">
           <AlertDialogHeader>
@@ -371,7 +348,6 @@ export function SiswaTable({ siswaList, onRefresh, kelasList = [] }: SiswaTableP
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Single Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="border-slate-200">
           <AlertDialogHeader>
