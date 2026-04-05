@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       details: { login_method: 'exam_login', ujian_id: ujian.id, kode_ujian: kode_ujian }
     })
 
-    const redirectUrl = `/siswa/ujian/${ujian.id}/kerjakan`
+    const redirectUrl = `/siswa/ujian/${ujian.id}`
 
     return NextResponse.json({
       success: true,

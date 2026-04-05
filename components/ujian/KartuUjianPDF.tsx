@@ -157,13 +157,13 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   infoLabel: {
-    fontSize: 6.5,
+    fontSize: 5.5,
+    fontWeight: 'normal',
     color: '#000000',
-    width: 35,
+    width: 40,
   },
   infoValue: {
-    fontSize: 6.5,
-    fontWeight: 'bold',
+    fontSize: 5.5,
     color: '#000000',
     flex: 1,
   },

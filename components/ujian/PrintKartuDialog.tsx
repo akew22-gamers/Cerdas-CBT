@@ -83,32 +83,6 @@ export function PrintKartuDialog({ ujianId, ujianJudul, ujianKode }: PrintKartuD
     }
   }
 
-  const convertImageToBase64 = async (url: string): Promise<string> => {
-    try {
-      // Jika url sudah berupa data URL, langsung return
-      if (url.startsWith('data:')) {
-        return url
-      }
-      
-      // Convert relative URL ke absolute
-      const fullUrl = url.startsWith('/') 
-        ? `${window.location.origin}${url}`
-        : url
-      
-      const response = await fetch(fullUrl)
-      const blob = await response.blob()
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onloadend = () => resolve(reader.result as string)
-        reader.onerror = reject
-        reader.readAsDataURL(blob)
-      })
-    } catch (error) {
-      console.error("Failed to convert image:", error)
-      return DEFAULT_LOGO_URL
-    }
-  }
-
   const generateQRCode = async (loginUrl: string): Promise<string> => {
     try {
       const qrDataUrl = await QRCode.toDataURL(loginUrl, {
@@ -141,16 +115,9 @@ export function PrintKartuDialog({ ujianId, ujianJudul, ujianKode }: PrintKartuD
       const studentsWithQR = await Promise.all(
         selectedStudents.map(async (student) => {
           const qrDataUrl = await generateQRCode(student.loginUrl)
-          // Gunakan logo dari sekolah atau fallback ke default logo
-          const logoUrl = student.sekolah.logo_url || DEFAULT_LOGO_URL
-          const logoDataUrl = await convertImageToBase64(logoUrl)
           return {
             ...student,
             qrData: qrDataUrl,
-            sekolah: {
-              ...student.sekolah,
-              logo_url: logoDataUrl
-            }
           }
         })
       )

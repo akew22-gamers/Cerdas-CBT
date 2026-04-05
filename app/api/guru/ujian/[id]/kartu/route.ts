@@ -3,6 +3,31 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { KartuUjianData, QRCardData } from '@/types/kartu'
 
+async function convertLogoToBase64(logoUrl: string | null): Promise<string | null> {
+  if (!logoUrl) return null
+  if (logoUrl.startsWith('data:')) return logoUrl
+  
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                  process.env.NEXT_PUBLIC_APP_URL || 
+                  'http://localhost:3000'
+  const fullUrl = logoUrl.startsWith('/') 
+    ? `${baseUrl}${logoUrl}`
+    : logoUrl
+  
+  try {
+    const response = await fetch(fullUrl)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const blob = await response.blob()
+    const buffer = await blob.arrayBuffer()
+    const base64 = Buffer.from(buffer).toString('base64')
+    const mimeType = response.headers.get('content-type') || 'image/svg+xml'
+    return `data:${mimeType};base64,${base64}`
+  } catch (error) {
+    console.error('Failed to convert logo:', error)
+    return null
+  }
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -91,6 +116,7 @@ export async function GET(
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ''
+    const logoDataUrl = await convertLogoToBase64(sekolahData?.logo_url || null)
     const kartuData: KartuUjianData[] = []
 
     for (const siswa of siswaData || []) {
@@ -123,7 +149,7 @@ export async function GET(
         },
         sekolah: {
           nama_sekolah: sekolahData?.nama_sekolah || '',
-          logo_url: sekolahData?.logo_url || null
+          logo_url: logoDataUrl
         },
         qrData: JSON.stringify(qrCardData),
         loginUrl
