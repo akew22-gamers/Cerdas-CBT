@@ -65,12 +65,41 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(arrayBuffer)
 
     // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
+    let { error: uploadError } = await supabase.storage
       .from(folder)
       .upload(filePath, buffer, {
         contentType: fileToUpload.type,
         upsert: false
       })
+
+    if (uploadError && uploadError.message.includes('bucket') && uploadError.message.includes('not found')) {
+      const { error: createError } = await supabase.storage.createBucket(folder, {
+        public: true,
+        fileSizeLimit: 5242880
+      })
+
+      if (createError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'BUCKET_NOT_FOUND',
+              message: `Bucket "${folder}" tidak dapat dibuat. Harap buat bucket di Supabase Storage dashboard.`
+            }
+          },
+          { status: 500 }
+        )
+      }
+
+      const uploadResult = await supabase.storage
+        .from(folder)
+        .upload(filePath, buffer, {
+          contentType: fileToUpload.type,
+          upsert: false
+        })
+
+      uploadError = uploadResult.error
+    }
 
     if (uploadError) {
       console.error('Upload error:', uploadError)
