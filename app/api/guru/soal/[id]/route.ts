@@ -36,7 +36,8 @@ export async function GET(request: Request, { params }: RouteParams) {
         ujian:ujian_id (
           id,
           judul,
-          status
+          status,
+          created_by
         )
       `)
       .eq('id', id)
@@ -50,8 +51,8 @@ export async function GET(request: Request, { params }: RouteParams) {
       )
     }
 
-    // Verify user owns this ujian
-    if (soal.ujian.created_by !== session.user.id) {
+    // Verify user owns this soal (check ujian created_by)
+    if (!soal.ujian || soal.ujian.created_by !== session.user.id) {
       return NextResponse.json(
         { success: false, error: { code: 'FORBIDDEN', message: 'Anda tidak memiliki akses ke soal ini' } },
         { status: 403 }
@@ -111,29 +112,8 @@ export async function PUT(request: Request, { params }: RouteParams) {
       )
     }
 
-    // Get soal with ujian info
-    const { data: soal, error: fetchError } = await supabase
-      .from('soal')
-      .select(`
-        *,
-        ujian:ujian_id (
-          id,
-          status,
-          created_by
-        )
-      `)
-      .eq('id', id)
-      .single()
-
-    if (fetchError || !soal) {
-      return NextResponse.json(
-        { success: false, error: { code: 'NOT_FOUND', message: 'Soal tidak ditemukan' } },
-        { status: 404 }
-      )
-    }
-
-    // Verify user owns this ujian
-    if (soal.ujian.created_by !== session.user.id) {
+    // Verify user owns this soal
+    if (!soal.ujian || soal.ujian.created_by !== session.user.id) {
       return NextResponse.json(
         { success: false, error: { code: 'FORBIDDEN', message: 'Anda tidak memiliki akses ke soal ini' } },
         { status: 403 }
