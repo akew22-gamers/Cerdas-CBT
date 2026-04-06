@@ -8,13 +8,74 @@ import { toast } from 'sonner'
 interface ImageUploadProps {
   value?: string | null
   onChange: (url: string | null) => void
+  onFileDelete?: (filePath: string) => void
   className?: string
+  maxSizeKB?: number
+  uploadEndpoint?: string
+  folder?: string
 }
 
-export function ImageUpload({ value, onChange, className = '' }: ImageUploadProps) {
+export function ImageUpload({ 
+  value, 
+  onChange, 
+  onFileDelete, 
+  className = '',
+  maxSizeKB = 100,
+  uploadEndpoint = '/api/upload/image',
+  folder = 'soal-images'
+}: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [preview, setPreview] = useState<string | null>(value ?? null)
+  const [filePath, setFilePath] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const compressImage = async (file: File, quality = 0.8): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          
+          const maxWidth = 1920
+          const maxHeight = 1920
+          let width = img.width
+          let height = img.height
+          
+          if (width > maxWidth || height > maxHeight) {
+            if (width > height) {
+              height = (height * maxWidth) / width
+              width = maxWidth
+            } else {
+              width = (width * maxHeight) / height
+              height = maxHeight
+            }
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          ctx?.drawImage(img, 0, 0, width, height)
+          
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob)
+              } else {
+                reject(new Error('Compression failed'))
+              }
+            },
+            file.type === 'image/png' ? 'image/png' : 'image/jpeg',
+            quality
+          )
+        }
+        img.onerror = (error) => reject(error)
+      }
+      reader.onerror = (error) => reject(error)
+    })
+  }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -34,8 +95,24 @@ export function ImageUpload({ value, onChange, className = '' }: ImageUploadProp
     setIsUploading(true)
 
     try {
+      let fileToUpload: File | Blob = file
+
+      if (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp') {
+        try {
+          fileToUpload = await compressImage(file, 0.8)
+          fileToUpload = new File([fileToUpload], file.name, { type: file.type })
+        } catch (error) {
+          console.error('Compression error:', error)
+        }
+      }
+
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', fileToUpload)
+      formData.append('folder', folder)
+      if (filePath) {
+        formData.append('oldFilePath', filePath)
+      }
+      formData.append('maxSizeKB', maxSizeKB.toString())
 
       const response = await fetch('/api/upload/image', {
         method: 'POST',
@@ -52,6 +129,7 @@ export function ImageUpload({ value, onChange, className = '' }: ImageUploadProp
 
       onChange(result.data.url)
       setPreview(result.data.url)
+      setFilePath(result.data.filePath)
       toast.success('Gambar berhasil diupload')
     } catch (error) {
       console.error('Upload error:', error)
@@ -65,8 +143,12 @@ export function ImageUpload({ value, onChange, className = '' }: ImageUploadProp
   }
 
   const handleRemove = () => {
+    if (filePath && onFileDelete) {
+      onFileDelete(filePath)
+    }
     onChange(null)
     setPreview(null)
+    setFilePath(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -95,7 +177,7 @@ export function ImageUpload({ value, onChange, className = '' }: ImageUploadProp
               {isUploading ? 'Mengupload...' : 'Klik untuk upload gambar'}
             </p>
             <p className="text-xs text-gray-500">
-              Maksimal 5MB (JPEG, PNG, GIF, WebP)
+              Maksimal 5MB (JPEG, PNG, GIF, WebP) - Otomatis dikompres
             </p>
           </div>
         ) : (

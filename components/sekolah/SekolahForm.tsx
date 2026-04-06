@@ -21,6 +21,7 @@ import {
   RotateCcw,
   Sparkles
 } from "lucide-react"
+import { ImageUpload } from "@/components/soal/ImageUpload"
 
 interface SekolahFormData {
   nama_sekolah?: string
@@ -193,32 +194,28 @@ export function SekolahForm({ initialData, readOnly = false, apiEndpoint = "/api
         </FormSection>
 
         <FormSection title="Media" icon={ImagePlus}>
-          <FormField
-            id="logo_url"
-            label="URL Logo Sekolah"
-            icon={ImagePlus}
-            type="url"
-            placeholder="https://example.com/logo.png"
-            value={formData.logo_url || ""}
-            onChange={handleInputChange}
-            disabled={isLoading || readOnly}
-            hint="Masukkan URL gambar logo sekolah (format PNG/JPG)"
-          />
-          {formData.logo_url && (
-            <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <p className="text-xs text-slate-500 mb-3 font-medium">Preview Logo:</p>
-              <div className="h-24 w-24 rounded-xl bg-white border border-slate-200 p-2 shadow-sm">
-                <img 
-                  src={formData.logo_url} 
-                  alt="Logo Preview"
-                  className="h-full w-full object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none'
-                  }}
-                />
-              </div>
-            </div>
-          )}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <ImagePlus className="h-4 w-4 text-slate-400" />
+              Logo Sekolah
+            </label>
+            <ImageUpload
+              value={formData.logo_url || ""}
+              onChange={(url) => {
+                setFormData(prev => ({ ...prev, logo_url: url ?? "" }))
+              }}
+              onFileDelete={(filePath) => {
+                fetch('/api/upload/delete', {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ filePath, folder: 'sekolah-logos' })
+                }).catch(console.error)
+              }}
+              maxSizeKB={100}
+              uploadEndpoint="/api/upload/image"
+              folder="sekolah-logos"
+            />
+          </div>
         </FormSection>
       </div>
 

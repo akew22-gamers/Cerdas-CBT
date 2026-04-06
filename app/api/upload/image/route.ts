@@ -1,8 +1,9 @@
 import { getSession } from '@/lib/auth/session'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { compressImageToFile, needsCompression, formatFileSize } from '@/lib/utils/compress-image'
 
-// POST /api/upload/image - Upload image to Supabase Storage
+// POST /api/upload/image - Upload image to Supabase Storage with compression
 export async function POST(request: Request) {
   try {
     const session = await getSession()
@@ -19,6 +20,9 @@ export async function POST(request: Request) {
     // Parse form data
     const formData = await request.formData()
     const file = formData.get('file') as File | null
+    const folder = (formData.get('folder') as string) || 'soal-images'
+    const oldFilePath = formData.get('oldFilePath') as string | null
+    const maxSizeKB = parseInt(formData.get('maxSizeKB') as string) || 100
 
     if (!file) {
       return NextResponse.json(
@@ -36,43 +40,48 @@ export async function POST(request: Request) {
       )
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { success: false, error: { code: 'FILE_TOO_LARGE', message: 'Ukuran file maksimal 5MB' } },
-        { status: 400 }
-      )
+    // Compress image if needed
+    let fileToUpload = file
+    let compressionMessage = ''
+    
+    if (needsCompression(file, maxSizeKB)) {
+      const originalSize = file.size
+      fileToUpload = await compressImageToFile(file, file.name, {
+        maxSizeKB,
+        maxWidth: 1200,
+        maxHeight: 1200
+      })
+      compressionMessage = `Compressed from ${formatFileSize(originalSize)} to ${formatFileSize(fileToUpload.size)}`
+      console.log(compressionMessage)
     }
 
     // Generate unique filename
-    const fileExt = file.name.split('.').pop()
+    const fileExt = fileToUpload.name.split('.').pop()
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-    const filePath = `soal-images/${fileName}`
+    const filePath = `${folder}/${fileName}`
 
     // Convert file to ArrayBuffer
-    const arrayBuffer = await file.arrayBuffer()
+    const arrayBuffer = await fileToUpload.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('soal-images')
+    const { error: uploadError } = await supabase.storage
+      .from(folder)
       .upload(filePath, buffer, {
-        contentType: file.type,
+        contentType: fileToUpload.type,
         upsert: false
       })
 
     if (uploadError) {
       console.error('Upload error:', uploadError)
       
-      // Check if bucket doesn't exist
       if (uploadError.message.includes('bucket') && uploadError.message.includes('not found')) {
         return NextResponse.json(
           { 
             success: false, 
             error: { 
               code: 'BUCKET_NOT_FOUND', 
-              message: 'Bucket "soal-images" belum dibuat. Harap buat bucket di Supabase Storage terlebih dahulu.' 
+              message: `Bucket "${folder}" belum dibuat. Harap buat bucket di Supabase Storage terlebih dahulu.` 
             } 
           },
           { status: 500 }
@@ -85,9 +94,22 @@ export async function POST(request: Request) {
       )
     }
 
+    // Delete old file if provided
+    if (oldFilePath) {
+      try {
+        await supabase.storage
+          .from(folder)
+          .remove([oldFilePath])
+        console.log('Old file deleted:', oldFilePath)
+      } catch (deleteError) {
+        console.error('Failed to delete old file:', deleteError)
+        // Don't fail the upload if delete fails
+      }
+    }
+
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('soal-images')
+      .from(folder)
       .getPublicUrl(filePath)
 
     return NextResponse.json({
@@ -95,7 +117,9 @@ export async function POST(request: Request) {
       data: {
         url: publicUrl,
         filename: fileName,
-        filePath: filePath
+        filePath: filePath,
+        size: fileToUpload.size,
+        compression: compressionMessage || 'No compression needed'
       }
     })
 

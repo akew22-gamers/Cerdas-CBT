@@ -157,7 +157,7 @@ export default function AdminDashboard() {
                   </div>
                 </Button>
               </Link>
-              <Link href="/admin/audit">
+              <Link href="/admin/audit-log">
                 <Button variant="outline" className="w-full justify-start gap-3 h-auto py-3 sm:py-4 hover:bg-blue-50 hover:border-blue-200 group transition-all">
                   <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
                     <Search className="w-4 h-4 text-blue-600" />
