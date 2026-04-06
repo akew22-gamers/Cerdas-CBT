@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Upload, X, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
@@ -28,6 +28,21 @@ export function ImageUpload({
   const [preview, setPreview] = useState<string | null>(value ?? null)
   const [filePath, setFilePath] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Extract file path from existing URL on mount
+  const extractFilePath = (url: string): string => {
+    // URL format: https://.../folder/filename or just folder/filename
+    const parts = url.split('/')
+    const filename = parts[parts.length - 1]
+    return `${folder}/${filename}`
+  }
+
+  // Initialize filePath from existing value
+  useEffect(() => {
+    if (value && !filePath) {
+      setFilePath(extractFilePath(value))
+    }
+  }, [value, filePath, folder])
 
   const compressImage = async (file: File, quality = 0.8): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -109,10 +124,10 @@ export function ImageUpload({
       const formData = new FormData()
       formData.append('file', fileToUpload)
       formData.append('folder', folder)
-      if (filePath) {
+      formData.append('maxSizeKB', maxSizeKB.toString())
+      if (filePath && !filePath.startsWith('temp-')) {
         formData.append('oldFilePath', filePath)
       }
-      formData.append('maxSizeKB', maxSizeKB.toString())
 
       const response = await fetch('/api/upload/image', {
         method: 'POST',
