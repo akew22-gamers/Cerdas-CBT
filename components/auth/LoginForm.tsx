@@ -87,20 +87,20 @@ export function LoginForm({ schoolName }: LoginFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={() => setRole('guru')}
           className={`
-            relative flex items-center justify-center gap-2 py-3 px-4 rounded-xl
-            transition-all duration-200 font-semibold text-sm
+            relative flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl
+            transition-all duration-200 font-semibold text-base
             ${role === 'guru'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 scale-[1.02]'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }
           `}
         >
-          <School className="w-4 h-4" />
+          <School className="w-5 h-5" />
           <span>GURU</span>
           {role === 'guru' && (
             <div className="absolute inset-0 rounded-xl ring-2 ring-white/50" />
@@ -111,43 +111,23 @@ export function LoginForm({ schoolName }: LoginFormProps) {
           type="button"
           onClick={() => setRole('siswa')}
           className={`
-            relative flex items-center justify-center gap-2 py-3 px-4 rounded-xl
-            transition-all duration-200 font-semibold text-sm
+            relative flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl
+            transition-all duration-200 font-semibold text-base
             ${role === 'siswa'
               ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 scale-[1.02]'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }
           `}
         >
-          <GraduationCap className="w-4 h-4" />
+          <GraduationCap className="w-5 h-5" />
           <span>SISWA</span>
           {role === 'siswa' && (
             <div className="absolute inset-0 rounded-xl ring-2 ring-white/50" />
           )}
         </button>
-
-        <button
-          type="button"
-          onClick={() => router.push('/ujian')}
-          className="
-            flex items-center justify-center gap-2 py-3 px-4 rounded-xl
-            bg-slate-800 text-white hover:bg-slate-900
-            transition-all duration-200 font-semibold text-sm
-            hover:scale-[1.02] active:scale-[0.98]
-          "
-        >
-          <span>UJIAN</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
       </div>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-200" />
-        </div>
-      </div>
-
-      <div className="space-y-4 pt-2">
+      <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="username" className="text-sm font-medium text-slate-700">
             {role === 'siswa' ? 'NISN' : 'NIP / Username'}
@@ -248,6 +228,26 @@ export function LoginForm({ schoolName }: LoginFormProps) {
               <ChevronRight className="w-4 h-4" />
             </span>
           )}
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => router.push('/ujian')}
+          variant="outline"
+          className="
+            w-full h-11 text-slate-700 font-semibold
+            border-2 border-slate-300 
+            hover:bg-slate-50 hover:border-slate-400 hover:text-slate-900
+            hover:scale-[1.02] active:scale-[0.98]
+            transition-all duration-200
+            bg-white
+          "
+        >
+          <span className="flex items-center gap-2">
+            <GraduationCap className="w-4 h-4" />
+            Login Ujian (Siswa)
+            <ArrowRight className="w-4 h-4" />
+          </span>
         </Button>
       </div>
 
