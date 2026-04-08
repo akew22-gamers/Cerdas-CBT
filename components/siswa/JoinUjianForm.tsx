@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { Loader2Icon } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Loader2Icon, X } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 
 interface JoinUjianFormProps {
   open?: boolean
@@ -17,6 +17,13 @@ export function JoinUjianForm({ open = true, onOpenChange }: JoinUjianFormProps)
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [kodeUjian, setKodeUjian] = useState("")
+
+  const handleClose = () => {
+    if (onOpenChange) {
+      onOpenChange(false)
+    }
+    router.push('/siswa')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,10 +65,22 @@ export function JoinUjianForm({ open = true, onOpenChange }: JoinUjianFormProps)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <button
+          onClick={handleClose}
+          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+          type="button"
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </button>
+
         <DialogHeader>
           <DialogTitle className="text-center text-lg">Masuk Ujian</DialogTitle>
+          <DialogDescription className="text-center text-sm">
+            Masukkan kode ujian yang diberikan oleh guru
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -80,17 +99,22 @@ export function JoinUjianForm({ open = true, onOpenChange }: JoinUjianFormProps)
               maxLength={10}
               autoComplete="off"
             />
-            <p className="text-xs text-muted-foreground text-center">
-              Masukkan kode ujian yang diberikan oleh guru
-            </p>
           </div>
 
-          <DialogFooter showCloseButton>
+          <DialogFooter>
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isPending}
+              className="w-full"
+            >
+              Batal
+            </Button>
             <Button 
               type="submit" 
               disabled={isPending || !kodeUjian.trim()}
               className="w-full"
-              size="lg"
             >
               {isPending ? (
                 <>
