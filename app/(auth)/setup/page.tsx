@@ -8,10 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import Image from 'next/image'
-import { Database, RefreshCw, Plus, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Database, RefreshCw, Plus, CheckCircle, AlertCircle, Loader2, ExternalLink, Copy, AlertTriangle } from 'lucide-react'
 
 type SetupStep = 'checking' | 'database' | 'admin' | 'sekolah' | 'confirm'
-type DatabaseState = 'checking' | 'ready' | 'has_data' | 'empty' | 'error'
+type DatabaseState = 'checking' | 'ready' | 'has_data' | 'empty' | 'error' | 'connection_error'
 
 interface SchoolData {
   nama_sekolah: string
@@ -38,6 +38,8 @@ export default function SetupPage() {
   const [dbState, setDbState] = useState<DatabaseState>('checking')
   const [dbMessage, setDbMessage] = useState('')
   const [selectedAction, setSelectedAction] = useState<'ready' | 'reset' | 'init' | null>(null)
+  const [schemaInstructions, setSchemaInstructions] = useState<string[]>([])
+  const [schemaUrl, setSchemaUrl] = useState('')
   
   const [adminData, setAdminData] = useState<AdminData>({
     username: '',
@@ -88,14 +90,35 @@ export default function SetupPage() {
         setDbMessage(data.data.message)
         setCurrentStep('database')
       } else {
-        setDbState('error')
-        setDbMessage(data.error?.message || 'Gagal memeriksa database')
+        if (data.error?.code === 'CONNECTION_ERROR') {
+          setDbState('connection_error')
+          setDbMessage(data.error.message)
+        } else {
+          setDbState('error')
+          setDbMessage(data.error?.message || 'Gagal memeriksa database')
+        }
         setCurrentStep('database')
       }
-    } catch {
-      setDbState('error')
-      setDbMessage('Tidak dapat terhubung ke database')
+    } catch (err) {
+      setDbState('connection_error')
+      setDbMessage('Tidak dapat terhubung ke database. Periksa koneksi internet dan konfigurasi environment variables.')
       setCurrentStep('database')
+    }
+  }
+
+  const checkSchemaNeeded = async () => {
+    try {
+      const res = await fetch('/api/setup/database-schema')
+      const data = await res.json()
+      
+      if (data.success && data.data.needsSchema) {
+        setSchemaInstructions(data.data.instructions)
+        setSchemaUrl(data.data.schemaUrl)
+        return true
+      }
+      return false
+    } catch {
+      return false
     }
   }
 
@@ -115,6 +138,13 @@ export default function SetupPage() {
           toast.error(data.error?.message || 'Gagal mereset database')
         }
       } else if (selectedAction === 'init') {
+        const needsSchema = await checkSchemaNeeded()
+        
+        if (needsSchema) {
+          toast.error('Jalankan SQL schema di Supabase Dashboard terlebih dahulu')
+          return
+        }
+        
         const res = await fetch('/api/setup/database-init', { method: 'POST' })
         const data = await res.json()
         
@@ -122,7 +152,12 @@ export default function SetupPage() {
           toast.success('Database berhasil diinisialisasi')
           setCurrentStep('admin')
         } else {
-          toast.error(data.error?.message || 'Gagal menginisialisasi database')
+          if (data.error?.code === 'TABLES_NOT_FOUND') {
+            toast.error(data.error.message)
+            await checkSchemaNeeded()
+          } else {
+            toast.error(data.error?.message || 'Gagal menginisialisasi database')
+          }
         }
       } else if (selectedAction === 'ready') {
         setCurrentStep('admin')
@@ -179,6 +214,11 @@ export default function SetupPage() {
     }
   }
 
+  const copySchemaUrl = () => {
+    navigator.clipboard.writeText(schemaUrl)
+    toast.success('URL schema berhasil disalin!')
+  }
+
   const canProceedToAdmin = adminData.username.trim() && adminData.password && adminData.confirmPassword
   const canProceedToConfirm = schoolData.nama_sekolah.trim() && schoolData.tahun_ajaran.trim()
 
@@ -191,10 +231,29 @@ export default function SetupPage() {
         </div>
       )}
 
+      {dbState === 'connection_error' && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="font-semibold text-red-800 mb-2">Koneksi Database Gagal</h3>
+          <p className="text-red-600 text-sm mb-4">{dbMessage}</p>
+          <div className="bg-red-100 rounded-lg p-4 text-left text-sm mb-4">
+            <p className="font-medium text-red-800 mb-2">Pastikan environment variables sudah benar:</p>
+            <ul className="list-disc list-inside text-red-700 space-y-1">
+              <li>NEXT_PUBLIC_SUPABASE_URL</li>
+              <li>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</li>
+              <li>SUPABASE_SERVICE_ROLE_KEY</li>
+            </ul>
+          </div>
+          <Button onClick={checkDatabase} variant="outline">
+            Coba Lagi
+          </Button>
+        </div>
+      )}
+
       {dbState === 'error' && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="font-semibold text-red-800 mb-2">Koneksi Database Gagal</h3>
+          <h3 className="font-semibold text-red-800 mb-2">Error Database</h3>
           <p className="text-red-600 text-sm mb-4">{dbMessage}</p>
           <Button onClick={checkDatabase} variant="outline">
             Coba Lagi
@@ -202,7 +261,70 @@ export default function SetupPage() {
         </div>
       )}
 
-      {(dbState === 'ready' || dbState === 'has_data' || dbState === 'empty') && (
+      {dbState === 'empty' && (
+        <div className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-amber-800">Database Kosong</h3>
+                <p className="text-amber-700 text-sm">{dbMessage}</p>
+              </div>
+            </div>
+          </div>
+
+          {schemaInstructions.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-800 mb-3">Langkah-langkah membuat tabel:</h4>
+              <ol className="list-decimal list-inside text-blue-700 text-sm space-y-2">
+                {schemaInstructions.map((instruction, idx) => (
+                  <li key={idx}>{instruction}</li>
+                ))}
+              </ol>
+              
+              <div className="mt-4 flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={copySchemaUrl}
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  Copy URL Schema
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => window.open(schemaUrl, '_blank')}
+                  className="flex items-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Buka Schema
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div
+            onClick={() => setSelectedAction('init')}
+            className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+              selectedAction === 'init' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Plus className={`w-6 h-6 ${selectedAction === 'init' ? 'text-blue-600' : 'text-gray-400'}`} />
+              <div>
+                <p className="font-medium">Saya sudah menjalankan SQL schema</p>
+                <p className="text-sm text-gray-500">Klik untuk melanjutkan inisialisasi</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(dbState === 'ready' || dbState === 'has_data') && (
         <>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
@@ -250,25 +372,6 @@ export default function SetupPage() {
                   <div>
                     <p className="font-medium">Reset database</p>
                     <p className="text-sm text-gray-500">Hapus semua data lama dan mulai dari awal</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {dbState === 'empty' && (
-              <div
-                onClick={() => setSelectedAction('init')}
-                className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                  selectedAction === 'init' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Plus className={`w-6 h-6 ${selectedAction === 'init' ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <div>
-                    <p className="font-medium">Buat tabel baru</p>
-                    <p className="text-sm text-gray-500">Inisialisasi database dengan struktur tabel yang diperlukan</p>
                   </div>
                 </div>
               </div>
@@ -503,7 +606,7 @@ export default function SetupPage() {
           {currentStep === 'database' && (
             <Button 
               onClick={handleDatabaseAction} 
-              disabled={!selectedAction || isLoading || dbState === 'checking' || dbState === 'error'}
+              disabled={!selectedAction || isLoading || dbState === 'checking' || dbState === 'error' || dbState === 'connection_error'}
             >
               {isLoading ? 'Memproses...' : 'Lanjut'}
             </Button>

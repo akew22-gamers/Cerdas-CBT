@@ -11,18 +11,21 @@ export async function GET() {
       .single()
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      // PGRST116 = no rows found (table exists but empty)
+      // 42P01 = relation does not exist (table doesn't exist - new database)
+      if (error.code === 'PGRST116' || error.code === '42P01') {
         return NextResponse.json<ApiSuccessResponse<{ setup_completed: boolean }>>({
           success: true,
           data: { setup_completed: false }
         })
       }
       
+      console.error('Setup status check error:', error)
       return NextResponse.json<ApiErrorResponse>({
         success: false,
         error: {
           code: 'DATABASE_ERROR',
-          message: 'Failed to check setup status'
+          message: `Failed to check setup status: ${error.message}`
         }
       }, { status: 500 })
     }

@@ -1,11 +1,23 @@
 import { NextResponse } from 'next/server'
 import type { ApiSuccessResponse, ApiErrorResponse } from '@/types/api'
 
-
 export async function GET() {
   try {
     const { createAdminClient } = await import('@/lib/supabase/admin')
-    const supabase = createAdminClient()
+    
+    let supabase
+    try {
+      supabase = createAdminClient()
+    } catch (clientError) {
+      console.error('Failed to create Supabase client:', clientError)
+      return NextResponse.json<ApiErrorResponse>({
+        success: false,
+        error: {
+          code: 'CONNECTION_ERROR',
+          message: 'Gagal terhubung ke database. Periksa konfigurasi environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY)'
+        }
+      }, { status: 500 })
+    }
 
     const { data, error } = await supabase
       .from('identitas_sekolah')
@@ -13,21 +25,23 @@ export async function GET() {
       .limit(1)
 
     if (error) {
+      // 42P01 = relation does not exist (table doesn't exist - new database)
       if (error.code === '42P01') {
         return NextResponse.json<ApiSuccessResponse<{ state: 'empty'; message: string }>>({
           success: true,
           data: {
             state: 'empty',
-            message: 'Tabel belum dibuat'
+            message: 'Database kosong - tabel belum dibuat. Klik "Buat tabel baru" untuk memulai.'
           }
         })
       }
 
+      console.error('Database query error:', error)
       return NextResponse.json<ApiErrorResponse>({
         success: false,
         error: {
           code: 'DATABASE_ERROR',
-          message: 'Gagal memeriksa status database'
+          message: `Gagal memeriksa status database: ${error.message}`
         }
       }, { status: 500 })
     }

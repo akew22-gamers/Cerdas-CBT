@@ -4,12 +4,46 @@ import type { ApiSuccessResponse, ApiErrorResponse } from '@/types/api'
 export async function POST() {
   try {
     const { createAdminClient } = await import('@/lib/supabase/admin')
-    const supabase = createAdminClient()
+    
+    let supabase
+    try {
+      supabase = createAdminClient()
+    } catch (clientError) {
+      console.error('Failed to create Supabase client:', clientError)
+      return NextResponse.json<ApiErrorResponse>({
+        success: false,
+        error: {
+          code: 'CONNECTION_ERROR',
+          message: 'Gagal terhubung ke database. Periksa konfigurasi environment variables.'
+        }
+      }, { status: 500 })
+    }
 
-    const { data: existing } = await supabase
+    const { data: existing, error: checkError } = await supabase
       .from('identitas_sekolah')
       .select('id')
       .limit(1)
+
+    if (checkError) {
+      if (checkError.code === '42P01') {
+        return NextResponse.json<ApiErrorResponse>({
+          success: false,
+          error: {
+            code: 'TABLES_NOT_FOUND',
+            message: 'Tabel database belum dibuat. Buka Supabase Dashboard > SQL Editor dan jalankan SQL schema dari file database_schema.md'
+          }
+        }, { status: 400 })
+      }
+
+      console.error('Database check error:', checkError)
+      return NextResponse.json<ApiErrorResponse>({
+        success: false,
+        error: {
+          code: 'DATABASE_ERROR',
+          message: `Gagal memeriksa database: ${checkError.message}`
+        }
+      }, { status: 500 })
+    }
 
     if (existing && existing.length > 0) {
       return NextResponse.json<ApiErrorResponse>({
@@ -21,7 +55,7 @@ export async function POST() {
       }, { status: 400 })
     }
 
-    const { error } = await supabase
+    const { error: insertError } = await supabase
       .from('identitas_sekolah')
       .insert({
         nama_sekolah: 'Sekolah Baru',
@@ -29,13 +63,13 @@ export async function POST() {
         setup_wizard_completed: false
       })
 
-    if (error) {
-      console.error('Database init error:', error)
+    if (insertError) {
+      console.error('Database init error:', insertError)
       return NextResponse.json<ApiErrorResponse>({
         success: false,
         error: {
           code: 'DATABASE_ERROR',
-          message: `Gagal menginisialisasi database: ${error.message}`
+          message: `Gagal menginisialisasi database: ${insertError.message}`
         }
       }, { status: 500 })
     }
